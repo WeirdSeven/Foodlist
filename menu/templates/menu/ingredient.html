@@ -1,0 +1,31 @@
+{% extends "menu/base.html" %}
+
+{% block title %}配料{% endblock %}
+
+
+{% block content %}
+
+{% if messages %}
+	{% for message in messages %}
+		<p>{{ message }}</p>
+	{% endfor %}
+{% endif %}
+
+
+添加配料
+<form action="{% url 'menu:ingredient' %}" method="post">
+	{% csrf_token %}
+	{{ form }}
+	<input type="submit" value="Submit" />
+</form>
+
+
+显示所有库存配料
+
+<ul>
+{% for ingredient in ingredient_set  %}
+	<li>名称: {{ ingredient.name }}, 转化率：{{ ingredient.ratio }}， 价格：{{ ingredient.price }} 元/斤</li>
+{% endfor %}
+</ul>
+
+{% endblock %}

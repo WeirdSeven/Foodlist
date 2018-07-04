@@ -1,0 +1,25 @@
+{% extends "menu/base.html" %}
+
+{% block title %}项目配料单{% endblock %}
+
+
+{% block content %}
+
+{% if messages %}
+	{% for message in messages %}
+		<p>{{ message }}</p>
+	{% endfor %}
+{% endif %}
+
+选择相应的项目下载
+
+<ul>
+{% for program in program_set %}
+	<li>
+		{{ program.name }} {{ program.date }} 
+		<a href="{% url 'menu:download_program_ingredient_report' program.name program.date.year program.date.month program.date.day  %}">下载项目配料单</a>
+	</li>
+{% endfor %}
+</ul>
+
+{% endblock %}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>菜品</title>
+		<!-- Include formset plugin - including jQuery dependency -->
+		<script src="/static/menu/jquery-1.3.2.min.js"></script>
+		<script src="/static/menu/jquery.formset.js"></script>
+	</head>
+<body>
+
+输入原料
+<form action="/menu/dish/" method="post">
+	{% csrf_token %}
+
+	{{ dish2ingredient_formset.management_form }}
+
+	{% for dish2ingredient_form in dish2ingredient_formset %}
+		<div class="dish2ingredient-formset">
+			{{ dish2ingredient_form.ingredient_name }}
+			{{ dish2ingredient_form.amount }}
+		</div>
+	{% endfor %}
+	<input type="submit" value="Submit" class="button"/>
+</form>
+
+
+
+
+</body>
+</html> 
+
+
+
+
+
+
+
+
+
+
