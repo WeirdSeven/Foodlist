@@ -21,16 +21,16 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 with open('/etc/django_secret_key') as f:
-    SECRET_KEY = f.read().strip()
+	SECRET_KEY = f.read().strip()
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', SECRET_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = bool(os.environ.get('DJANGO_DEBUG', True))
+DEBUG = os.path.exists('/etc/django_dev')
 
 ALLOWED_HOSTS = [
 	'45.32.28.76',
-        '173.255.215.150',
-        '127.0.0.1',
+		'173.255.215.150',
+		'127.0.0.1',
 ]
 
 
