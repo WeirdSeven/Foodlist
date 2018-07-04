@@ -10,7 +10,7 @@ class Dish2IngredientInline(admin.TabularInline):
 
 class IngredientAdmin(admin.ModelAdmin):
 	#inlines = (Dish2IngredientInline,)
-	pass
+	exclude = ('ratio', )
 	
 
 class DishAdmin(admin.ModelAdmin):

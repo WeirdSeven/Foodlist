@@ -7,7 +7,7 @@ import datetime
 class Ingredient(models.Model):
 	name = models.CharField(max_length = 200, verbose_name = '配料名称')
 	ratio = models.FloatField(default = 1, verbose_name = '转化率')
-	price = models.FloatField(default = 0, verbose_name = '单价')
+	price = models.FloatField(verbose_name = '单价(元/斤)')
 
 	class Meta:
 		verbose_name = '配料'
@@ -50,10 +50,4 @@ class Program2Dish(models.Model):
 
 	def __str__(self):
 		return '%s %s %d' % (str(self.program), str(self.dish), self.count)
-
-class Location(models.Model):
-	name = models.CharField(max_length = 200)
-
-	def __str__(self):
-		return self.name
-
+		
