@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 # Register your models here.
-
 from .models import Ingredient, Dish, Dish2Ingredient
 
 class Dish2IngredientInline(admin.TabularInline):
@@ -19,3 +18,9 @@ class DishAdmin(admin.ModelAdmin):
 
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Dish, DishAdmin)
+
+# Hide the auth section for now
+# Todo: only hide this section to designated users
+from django.contrib.auth.models import User, Group
+admin.site.unregister(User)
+admin.site.unregister(Group)

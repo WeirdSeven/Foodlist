@@ -37,13 +37,16 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-	'menu.apps.MenuConfig',
+	# django apps first
 	'django.contrib.admin',
 	'django.contrib.auth',
 	'django.contrib.contenttypes',
 	'django.contrib.sessions',
 	'django.contrib.messages',
 	'django.contrib.staticfiles',
+
+	# custom apps below
+	'menu.apps.MenuConfig',
 ]
 
 MIDDLEWARE = [

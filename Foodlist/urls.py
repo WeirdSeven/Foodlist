@@ -19,7 +19,7 @@ from django.contrib import admin
 urlpatterns = [
 	path('', admin.site.urls),
 	path('menu/', include('menu.urls')),
-	path('admin/', admin.site.urls),
+	#path('admin/', admin.site.urls),
 ]
 
 admin.site.site_header = '得来奇管理系统'
