@@ -40,8 +40,8 @@ class Dish2Ingredient(models.Model):
 		return '%s %s %d斤' % (str(self.dish), str(self.ingredient), self.quantity)
 
 class Program(models.Model):
-	name = models.CharField(max_length = 200, unique = True)
-	date = models.DateField(default = datetime.date.today)
+	name = models.CharField(max_length = 200, unique = True, verbose_name = '项目名称')
+	date = models.DateField(default = datetime.date.today, verbose_name_plural = '日期')
 	dishes = models.ManyToManyField(Dish, through = 'Program2Dish')
 
 	class Meta:
