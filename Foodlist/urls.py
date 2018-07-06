@@ -21,3 +21,7 @@ urlpatterns = [
 	path('menu/', include('menu.urls')),
 	path('admin/', admin.site.urls),
 ]
+
+admin.site.site_header = '得来奇管理系统'
+admin.site.index_title = '数据库管理'
+admin.site.site_title = '得来奇管理系统'

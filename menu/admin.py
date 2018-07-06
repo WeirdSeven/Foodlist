@@ -19,8 +19,3 @@ class DishAdmin(admin.ModelAdmin):
 
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Dish, DishAdmin)
-
-
-admin.site.site_header = 'DeLaiQi 管理系统'
-admin.site.site_title = 'My site admin'
-admin.site.index_title = '站点管理'
