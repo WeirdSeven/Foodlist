@@ -29,8 +29,8 @@ DEBUG = os.path.exists('/etc/django_dev')
 
 ALLOWED_HOSTS = [
 	'45.32.28.76',
-		'173.255.215.150',
-		'127.0.0.1',
+	'173.255.215.150',
+	'127.0.0.1',
 ]
 
 
@@ -134,8 +134,8 @@ PROJECT_ROOT = os.path.normpath(os.path.dirname(__file__))
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-#STATICFILES_DIRS = (
-#	os.path.join('static'),
-#)
+STATICFILES_DIRS = (
+	os.path.join(BASE_DIR, 'static_dev'),
+)
