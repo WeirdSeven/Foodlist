@@ -28,8 +28,8 @@ class Dish(models.Model):
 		return self.name
 
 class Dish2Ingredient(models.Model):
-	dish = models.ForeignKey(Dish, on_delete = models.CASCADE, verbose_name = '配料名称')
-	ingredient = models.ForeignKey(Ingredient, on_delete = models.CASCADE, verbose_name = '菜品名称')
+	dish = models.ForeignKey(Dish, on_delete = models.CASCADE, verbose_name = '菜品名称')
+	ingredient = models.ForeignKey(Ingredient, on_delete = models.CASCADE, verbose_name = '配料名称')
 	quantity = models.FloatField(verbose_name = '重量')
 
 	class Meta:
@@ -41,7 +41,7 @@ class Dish2Ingredient(models.Model):
 
 class Program(models.Model):
 	name = models.CharField(max_length = 200, unique = True, verbose_name = '项目名称')
-	date = models.DateField(default = datetime.date.today, verbose_name_plural = '日期')
+	date = models.DateField(default = datetime.date.today, verbose_name = '日期')
 	dishes = models.ManyToManyField(Dish, through = 'Program2Dish')
 
 	class Meta:
@@ -52,9 +52,9 @@ class Program(models.Model):
 		return '%s %s' % (self.name, str(self.date))
 
 class Program2Dish(models.Model):
-	program = models.ForeignKey(Program, on_delete = models.CASCADE)
-	dish = models.ForeignKey(Dish, on_delete = models.CASCADE)
-	count = models.IntegerField()
+	program = models.ForeignKey(Program, on_delete = models.CASCADE, verbose_name = '项目名称')
+	dish = models.ForeignKey(Dish, on_delete = models.CASCADE, verbose_name = '菜品名称')
+	count = models.IntegerField(verbose_name = '份数')
 
 	class Meta:
 		verbose_name = '项目的菜品'
