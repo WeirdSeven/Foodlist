@@ -1,0 +1,18 @@
+{% extends "menu/base.html" %}
+
+{% block title %}项目配料单{% endblock %}
+
+
+{% block content %}
+
+{% if messages %}
+    {% for message in messages %}
+        <p>{{ message }}</p>
+    {% endfor %}
+{% endif %}
+
+选择相应的项目下载
+
+
+
+{% endblock %}

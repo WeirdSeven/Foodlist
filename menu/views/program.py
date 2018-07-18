@@ -41,10 +41,10 @@ def program_post(request):
 			dish = Dish.objects.get(name = dish_name)
 		except Dish.DoesNotExist:
 			dmessages.error(request, "菜品%s不存在，请先添加菜品信息" % (dish_name))
-			return dhettp.HttpResponseRedirect(durls.reverse('menu:program'))
+			return dhttp.HttpResponseRedirect(durls.reverse('menu:program'))
 		except Dish.MultipleObjectsReturned:
 			dmessages.error(request, "记录中存在多个关于菜品%s的信息" % (dish_name))
-			return dhettp.HttpResponseRedirect(durls.reverse('menu:program'))
+			return dhttp.HttpResponseRedirect(durls.reverse('menu:program'))
 
 	program_name = program_form.cleaned_data.get('program_name')
 	date = program_form.cleaned_data.get('date')

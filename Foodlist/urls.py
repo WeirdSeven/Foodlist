@@ -15,11 +15,12 @@ Including another URLconf
 """
 from django.urls import include, path
 from django.contrib import admin
+from . import views
 
 urlpatterns = [
-	path('', admin.site.urls),
+	path('', views.index),
+	path('admin/', admin.site.urls, name = 'admin'),
 	path('menu/', include('menu.urls')),
-	#path('admin/', admin.site.urls),
 ]
 
 admin.site.site_header = '得来奇管理系统'
