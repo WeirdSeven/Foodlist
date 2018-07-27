@@ -1,19 +1,29 @@
 # -*- coding: utf-8 -*-  
 
-import django.shortcuts as dshortcuts
-import django.utils as dutils
-import django.urls as durls
-import django.http as dhttp
-import django.forms as dforms
-import django.contrib.messages as dmessages
+import django.utils.http as duhttp
 
 import openpyxl
 
-import datetime
 import collections
+import unicodedata
 
 from ..models import Program, Program2Dish, Dish, Dish2Ingredient, Ingredient
 from . import excel
+
+def report_title(year, month, day, name = None):
+	if name:
+		return '%d年%d月%d日%s项目' % (year, month, day, name)
+	else:
+		return '%d年%d月%d日公司' % (year, month, day)
+
+def rfc5987_content_disposition(file_name):
+	ascii_name = unicodedata.normalize('NFKD', file_name).encode('ascii','ignore').decode()
+	header = 'attachment; filename="{}"'.format(ascii_name)
+	if ascii_name != file_name:
+		quoted_name = duhttp.urlquote(file_name)
+		header += '; filename*=UTF-8\'\'{}'.format(quoted_name)
+
+	return header
 
 
 def get_dish_ingredients(dish):
@@ -21,8 +31,7 @@ def get_dish_ingredients(dish):
 	return [(entry.ingredient.name, entry.quantity) for entry in dish2ingredient_entries]
 
 
-def program_ingredient_report(request, name, year, month, day):
-	program = dshortcuts.get_object_or_404(Program, name = name, date = datetime.date(year, month, day))
+def program_report(program, title):
 	program2dish_entries = Program2Dish.objects.filter(program = program)
 
 	program_dishes = []
@@ -41,24 +50,18 @@ def program_ingredient_report(request, name, year, month, day):
 		cost = raw_quantity * ingredient.price
 		program_ingredients.append((i, ingredient_name, raw_quantity, cost))
 
-	title = '%d年%d月%d日%s项目' % (year, month, day, name)
 	wb = excel.program_ingredient_report(title, program_dishes, program_ingredients)
+	return wb
 
+	'''
 	response = dhttp.HttpResponse(content = openpyxl.writer.excel.save_virtual_workbook(wb), 
 		content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 	filename = '%d年%d %d %s.xlsx' % (year, month, day, name)
 	response['Content-Disposition'] = 'attachment; filename=%s' % dutils.encoding.force_text(filename)
 	return response
-	
-def program_report(request):
-	context = {
-		'program_set' : Program.objects.all()
-	}
-	return dshortcuts.render(request, 'menu/download_program_report.html', context)
+	'''
 
-
-def company_ingredient_report(request, year, month, day):
-	programs = dshortcuts.get_list_or_404(Program, date = datetime.date(year, month, day))
+def company_report(programs, title):
 	program_names = [program.name for program in programs]
 
 	program2dish_entries = []
@@ -99,23 +102,12 @@ def company_ingredient_report(request, year, month, day):
 		cost = raw_quantity * ingredient.price
 		company_ingredients.append((i, ingredient_name, raw_quantity, cost))
 
-	title = '%d年%d月%d日' % (year, month, day)
 	wb = excel.company_ingredient_report(title, program_names, company_dishes, company_ingredients)
+	return wb
 
+	'''
 	response = dhttp.HttpResponse(content = openpyxl.writer.excel.save_virtual_workbook(wb), 
 		content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 	response['Content-Disposition'] = 'attachment; filename=%d年%d月%d日公司总配料单.xlsx' % (year, month, day)
 	return response
-
-
-def company_report(request):
-	program_set = Program.objects.all()
-	date_set = collections.OrderedDict()
-	for program in program_set:
-		date_set[program.date] = None
-	date_set = list(date_set.keys())
-
-	context = {
-		'date_set' : date_set
-	}
-	return dshortcuts.render(request, 'menu/download_company_report.html', context)
+	'''

@@ -31,7 +31,7 @@ def generate_program_ingredient_report(wb, title, program_dishes):
 	COLUMN_WEIGHT = 5
 
 	wb.create_sheet('配料单')
-	sheet = wb.get_sheet_by_name('配料单')
+	sheet = wb['配料单']
 
 	sheet.merge_cells(start_row = 1, start_column = COLUMN_ID, end_row = 1, end_column = COLUMN_WEIGHT)
 	sheet.cell(row = 1, column = 1).value = title
@@ -77,7 +77,7 @@ def generate_program_purchase_report(wb, title, program_ingredients):
 	COLUMN_COST = 4
 
 	wb.create_sheet('采购清单')
-	sheet = wb.get_sheet_by_name('采购清单')
+	sheet = wb['采购清单']
 
 	sheet.merge_cells(start_row = 1, start_column = COLUMN_ID, end_row = 1, end_column = COLUMN_COST)
 	sheet.cell(row = 1, column = 1).value = title
@@ -102,7 +102,7 @@ def program_ingredient_report(title, program_dishes, program_ingredients):
 	wb = openpyxl.Workbook()
 	generate_program_ingredient_report(wb, title + '配料单', program_dishes)
 	generate_program_purchase_report(wb, title + '采购清单', program_ingredients)
-	wb.remove_sheet(wb['Sheet'])
+	del wb['Sheet']
 	return wb
 
 
@@ -115,7 +115,7 @@ def generate_company_ingredient_report(wb, title, program_names, company_dishes)
 	COLUMN_WEIGHT = COLUMN_INGREDIENT + 1
 
 	wb.create_sheet('配料单')
-	sheet = wb.get_sheet_by_name('配料单')
+	sheet = wb['配料单']
 
 	sheet.merge_cells(start_row = 1, start_column = COLUMN_ID, end_row = 1, end_column = COLUMN_WEIGHT)
 	sheet.cell(row = 1, column = 1).value = title
@@ -178,7 +178,7 @@ def company_ingredient_report(title, program_names, company_dishes, company_ingr
 	wb = openpyxl.Workbook()
 	generate_company_ingredient_report(wb, title + '公司总配料单', program_names, company_dishes)
 	generate_company_purchase_report(wb, title + '公司总采购清单', company_ingredients)
-	wb.remove_sheet(wb['Sheet'])
+	del wb['Sheet']
 	return wb
 
 

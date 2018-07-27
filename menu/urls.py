@@ -10,11 +10,7 @@ urlpatterns = [
 	path('program/', views.program.program, name = 'program'),
 
 
-	path('reports/', views.reports.report, name = 'reports'),
-	
-
-
+	path('reports/', views.reports.report_list, name = 'reports'),
+	path('reports/<int:year>/<int:month>/<int:day>/', views.reports.report, name = 'daily_reports'),
+	path('reports/<int:year>/<int:month>/<int:day>/<program>', views.reports.report, name = 'program_reports'),
 ]
-
-#path('reports/ingredient/days/<int:year>/<int:month>/<int:day>/', views.reports.daily_ingredient_report, name = 'daily_ingredient_report'),
-	#path('reports/ingredient/programs/<name>/<int:year>/<int:month>/<int:day>/', views.reports.program_ingredient_report, name = 'program_ingredient_report'),

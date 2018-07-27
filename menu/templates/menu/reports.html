@@ -2,6 +2,20 @@
 
 {% block title %}项目配料单{% endblock %}
 
+{% block extrahead %}
+
+<style type="text/css">
+    a.LinkButton {
+      border-style: solid;
+      border-width : 1px 1px 1px 1px;
+      text-decoration : none;
+      padding : 4px;
+      border-color : #000000
+    }
+</style>
+
+{% endblock %}
+
 
 {% block content %}
 
@@ -13,6 +27,22 @@
 
 选择相应的项目下载
 
+<form action="{% url 'menu:daily_reports' today.year today.month today.day %}" method ="post">
+    {% csrf_token %}
+    <button type="submit" name="reports" value="generate">点击更新当日报告</button>
+</form>
 
+{% for program_sublist in program_sublists %}
+    <h2> {{ program_sublist.date }} </h2>
+
+    <!-- Lists existing reports -->
+    <ul>
+        {% for program in program_sublist.programs %}
+            <li> {{ program }} <a href="{% url 'menu:program_reports' program.date.year program.date.month program.date.day program.name %}">点击下载</a> </li>
+        {%  endfor %}
+    </ul>
+
+
+{% endfor %}
 
 {% endblock %}
