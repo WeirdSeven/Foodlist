@@ -67,7 +67,7 @@ def report_post(request, year, month, day):
 	dmessages.success(request, "成功更新了所有今日报告")
 	return dhttp.HttpResponseRedirect(durls.reverse('menu:reports'))
 
-def report_get_program(request, year, month, day, program):
+def report_get(request, year, month, day, program = None):
 	reports_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))), 'reports')
 	filename = '%s.xlsx' % reportutils.report_title(year, month, day, program)
 	filepath = os.path.join(reports_directory, filename)
@@ -81,13 +81,6 @@ def report_get_program(request, year, month, day, program):
 		response = dhttp.HttpResponse(content = data, content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 		response['Content-Disposition'] =  reportutils.rfc5987_content_disposition(filename)
 		return response
-
-def report_get(request, year, month, day, program):
-	if program:
-		return report_get_program(request, year, month, day, program)
-	else:
-		return report_get_company(request, year, month, day)
-
 
 def report(request, year, month, day, program = None):
 	if request.method == 'POST':
