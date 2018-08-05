@@ -34,13 +34,11 @@ def report_list(request):
 	program_sublists = []
 	for i in range(len(program_list)):
 		if i == 0 or program_list[i].date != program_list[i - 1].date:
-			new_program_sublist = ProgramSublist(str(program_list[i].date))
+			new_program_sublist = ProgramSublist(program_list[i].date)
 			new_program_sublist.programs.append(program_list[i])
 			program_sublists.append(new_program_sublist)
 		else:
 			program_sublists[-1].programs.append(program_list[i])
-
-	print(program_sublists)
 
 	context = {
 		'today' : datetime.date.today(),

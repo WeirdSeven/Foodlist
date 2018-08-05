@@ -33,7 +33,7 @@
 </form>
 
 {% for program_sublist in program_sublists %}
-    <h2> {{ program_sublist.date }} </h2>
+    <h2> {{ program_sublist.date }} </h2> <a href="{% url 'menu:daily_reports' program_sublist.date.year program_sublist.date.month program_sublist.date.day %}">点击下载</a> </li>
 
     <!-- Lists existing reports -->
     <ul>
