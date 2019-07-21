@@ -63,7 +63,7 @@ class CongeeSoup2Ingredient(models.Model):
 
 class Staple(models.Model):
 	name = models.CharField(max_length = 200, unique = True, verbose_name = '主食名称')
-	price = models.FloatField()
+	price = models.FloatField(verbose_name = '单价')
 
 	class Meta:
 		verbose_name = '主食'
@@ -74,7 +74,7 @@ class Staple(models.Model):
 
 class Oil(models.Model):
 	name = models.CharField(max_length = 200, unique = True, verbose_name = '油名称')
-	price = models.FloatField()
+	price = models.FloatField(verbose_name = '单价')
 
 	class Meta:
 		verbose_name = '油'
@@ -85,7 +85,7 @@ class Oil(models.Model):
 
 class Condiment(models.Model):
 	name = models.CharField(max_length = 200, unique = True, verbose_name = '调料名称')
-	price = models.FloatField()
+	price = models.FloatField(verbose_name = '单价')
 
 	class Meta:
 		verbose_name = '调料'
@@ -96,7 +96,7 @@ class Condiment(models.Model):
 
 class Disposable(models.Model):
 	name = models.CharField(max_length = 200, unique = True, verbose_name = '一次性用品名称')
-	price = models.FloatField()
+	price = models.FloatField(verbose_name = '单价')
 
 	class Meta:
 		verbose_name = '一次性用品'
@@ -124,7 +124,9 @@ class Program(models.Model):
 	dishes = models.ManyToManyField(Dish, through = 'Program2Dish')
 	congeesoups = models.ManyToManyField(CongeeSoup, through = 'Program2CongeeSoup')
 	staples = models.ManyToManyField(Staple, through = 'Program2Staple')
-	condiments = models.FloatField(verbose_name = '项目的调料')
+	condiments_bool = models.BooleanField(verbose_name = '点击使用此调料价格而非下面表格的调料明细')
+	condiments_price = models.FloatField(verbose_name = '项目的调料价格')
+	condiments = models.ManyToManyField(Condiment, through = 'Program2Condiment')
 	oil = models.ManyToManyField(Oil, through = 'Program2Oil')
 	disposables = models.ManyToManyField(Disposable, through = 'Program2Disposable')
 
