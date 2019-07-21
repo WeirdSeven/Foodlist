@@ -45,6 +45,14 @@ class Program2StapleInline(admin.TabularInline):
 	autocomplete_fields = ['staple']
 	extra = 1
 
+class CondimentAdmin(admin.ModelAdmin):
+	search_fields = ['name']
+
+class Program2CondimentInline(admin.TabularInline):
+	model = Program2Condiment
+	autocomplete_fields = ['condiment']
+	extra = 1
+
 class OilAdmin(admin.ModelAdmin):
 	search_fields = ['name']
 
@@ -62,10 +70,12 @@ class Program2DisposableInline(admin.TabularInline):
 	extra = 1
 
 class ProgramAdmin(admin.ModelAdmin):
+	fields = ('name', 'superprogram', 'date', ('condiments_price', 'condiments_bool'))
 	inlines = [
 		Program2DishInline, 
 		Program2CongeeSoupInline, 
 		Program2StapleInline,
+		Program2CondimentInline,
 		Program2OilInline, 
 		Program2DisposableInline,
 	]
@@ -77,6 +87,7 @@ admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Dish, DishAdmin)
 admin.site.register(CongeeSoup, CongeeSoupAdmin)
 admin.site.register(Staple, StapleAdmin)
+admin.site.register(Condiment, CondimentAdmin)
 admin.site.register(Oil, OilAdmin)
 admin.site.register(Disposable, DisposableAdmin)
 admin.site.register(Program, ProgramAdmin)
