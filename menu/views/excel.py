@@ -92,11 +92,16 @@ def generate_program_purchase_report(wb, title, program_ingredients):
 		sheet.cell(row = 2, column = col).border = THIN_BORDER
 
 	cur_row = 3
+	total_cost = 0
 	for ingredient in program_ingredients:
 		for col in [COLUMN_ID, COLUMN_INGREDIENT, COLUMN_QUANTITY, COLUMN_COST]:
 			sheet.cell(row = cur_row, column = col).value = ingredient[col - 1]
 			sheet.cell(row = cur_row, column = col).border = THIN_BORDER
+		total_cost += ingredient[COLUMN_COST - 1]
 		cur_row += 1
+
+	sheet.cell(row=cur_row, column=COLUMN_COST).value = total_cost
+	sheet.cell(row=cur_row, column=COLUMN_COST).border = THIN_BORDER
 
 def program_ingredient_report(title, program_dishes, program_ingredients):
 	wb = openpyxl.Workbook()
