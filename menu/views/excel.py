@@ -112,10 +112,13 @@ def program_ingredient_report(title, program_dishes, program_ingredients):
 
 
 def generate_company_ingredient_report(wb, title, program_names, company_dishes):
+	if not program_names:
+		program_names = ['无']
+
 	COLUMN_ID = 1
 	COLUMN_DISH = 2
 	COLUMN_COUNT_START = 3
-	COLUMN_COUNT_END = 3 + len(program_names) - 1
+	COLUMN_COUNT_END = COLUMN_COUNT_START + len(program_names) - 1
 	COLUMN_INGREDIENT = COLUMN_COUNT_END + 1
 	COLUMN_WEIGHT = COLUMN_INGREDIENT + 1
 
