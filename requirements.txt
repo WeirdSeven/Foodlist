@@ -20,8 +20,8 @@
 # menu/views/index.py: 1
 # menu/views/ingredient.py: 1,2,3,4
 # menu/views/program.py: 1,2,3,4,5
-Django == 2.0.7
+Django == 2.2.4
 
 # menu/views/download.py: 10
 # menu/views/excel.py: 1
-openpyxl == 2.5.3
+openpyxl == 2.6.2
