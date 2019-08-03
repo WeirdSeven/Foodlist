@@ -45,7 +45,6 @@ INSTALLED_APPS = [
 	'django.contrib.staticfiles',
 
 	# custom apps below
-	'Foodlist',
 	'menu.apps.MenuConfig',
 ]
 
