@@ -21,7 +21,11 @@ from . import reportutils
 def report_list(request):
 	program_list = list(Program.objects.all().order_by('-date'))
 	if not program_list:
-		return dshortcuts.render(request, 'menu/reports.html')
+		context = {
+			'today': datetime.date.today(),
+			'program_sublists': [],
+		}
+		return dshortcuts.render(request, 'menu/reports.html', context)
 
 	class ProgramSublist:
 		def __init__(self, date):
