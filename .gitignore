@@ -108,3 +108,6 @@ venv.bak/
 
 # Specific to this Project
 reports/
+
+# PyCharm
+.idea/
