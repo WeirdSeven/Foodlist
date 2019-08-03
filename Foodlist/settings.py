@@ -28,8 +28,6 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', SECRET_KEY)
 DEBUG = os.path.exists('/etc/django_dev')
 
 ALLOWED_HOSTS = [
-	'45.32.28.76',
-	'173.255.215.150',
 	'127.0.0.1',
 	'delaiqi.biz',
 ]
