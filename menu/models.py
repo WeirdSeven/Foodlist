@@ -6,7 +6,7 @@ import datetime
 class Ingredient(models.Model):
 	name = models.CharField(max_length = 200, unique = True, verbose_name = '配料名称')
 	ratio = models.FloatField(default = 1, verbose_name = '转化率')
-	price = models.FloatField(verbose_name = '单价(元/斤)')
+	price = models.FloatField(verbose_name = '单价(元/克)')
 
 	class Meta:
 		verbose_name = '配菜'
