@@ -5,7 +5,7 @@ import datetime
 
 class IngredientForm(forms.Form):
 	name = forms.CharField(label = '名称')
-	price = forms.FloatField(label = '价格（单位：元/斤）')
+	price = forms.FloatField(label = '价格（单位：元/克）')
 	ratio = forms.FloatField(label = '转化率')
 
 class Dish2IngredientForm(forms.Form):
