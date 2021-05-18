@@ -34,3 +34,6 @@ Alternatively, use this command to change password
 Nginx will face the outside world. It will serve media files (images, CSS, etc) directly 
 from the file system. However, it can't talk directly to Django applications; it needs 
 something that will run the application, feed it requests from the web, and return responses.
+
+# Deployment
+https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu-16-04
