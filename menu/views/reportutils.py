@@ -10,9 +10,12 @@ import unicodedata
 from ..models import Program, Program2Dish, Dish, Dish2Ingredient, Ingredient
 from . import excel
 
-def report_title(year, month, day, name = None):
+def report_title(year, month, day, name=None, is_super_program=False):
 	if name:
-		return '%d年%d月%d日%s项目' % (year, month, day, name)
+		if is_super_program:
+			return '%d年%d月%d日%s大项目' % (year, month, day, name)
+		else:
+			return '%d年%d月%d日%s项目' % (year, month, day, name)
 	else:
 		return '%d年%d月%d日公司' % (year, month, day)
 

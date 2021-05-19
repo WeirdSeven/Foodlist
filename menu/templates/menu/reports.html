@@ -33,14 +33,29 @@
 </form>
 
 {% for program_sublist in program_sublists %}
-    <h2> {{ program_sublist.date }} </h2> <a href="{% url 'menu:daily_reports' program_sublist.date.year program_sublist.date.month program_sublist.date.day %}">点击下载</a> </li>
 
-    <!-- Lists existing reports -->
+    <h2> {{ program_sublist.date }} </h2>
+
+    <h4>小项目</h4>
     <ul>
         {% for program in program_sublist.programs %}
-            <li> {{ program }} <a href="{% url 'menu:program_reports' program.date.year program.date.month program.date.day program.name %}">点击下载</a> </li>
+            <li> {{ program.name }} <a href="{% url 'menu:program_reports' program_sublist.date.year program_sublist.date.month program_sublist.date.day program.name %}">点击下载</a> </li>
         {%  endfor %}
     </ul>
+
+    <h4>大项目</h4>
+    <ul>
+        {% for super_program in program_sublist.super_programs %}
+            <li> {{ super_program }} <a href="{% url 'menu:super_program_reports' program_sublist.date.year program_sublist.date.month program_sublist.date.day super_program.name %}">点击下载</a> </li>
+        {%  endfor %}
+    </ul>
+
+    <h4>公司全部</h4>
+    <a href="{% url 'menu:daily_reports' program_sublist.date.year program_sublist.date.month program_sublist.date.day %}">点击下载</a> </li>
+
+    <!-- blank line -->
+    <p><br></p>
+    
 
 
 {% endfor %}

@@ -12,5 +12,6 @@ urlpatterns = [
 
 	path('reports/', views.reports.report_list, name = 'reports'),
 	path('reports/<int:year>/<int:month>/<int:day>/', views.reports.report, name = 'daily_reports'),
-	path('reports/<int:year>/<int:month>/<int:day>/<program>', views.reports.report, name = 'program_reports'),
+	path('reports/<int:year>/<int:month>/<int:day>/program/<program>', views.reports.report, {'is_super_program': False}, name='program_reports'),
+	path('reports/<int:year>/<int:month>/<int:day>/super_program/<program>', views.reports.report, {'is_super_program': True}, name='super_program_reports'),
 ]
