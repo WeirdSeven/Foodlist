@@ -117,7 +117,7 @@ class SuperProgram(models.Model):
 		return self.name
 
 class Program(models.Model):
-	name = models.CharField(max_length = 200, unique = True, verbose_name = '项目名称')
+	name = models.CharField(max_length = 200, verbose_name = '项目名称')
 	superprogram = models.ForeignKey(SuperProgram, null = True, on_delete = models.SET_NULL, verbose_name = '大项目名称')
 	date = models.DateField(default = datetime.date.today, verbose_name = '日期')
 
@@ -133,6 +133,7 @@ class Program(models.Model):
 	class Meta:
 		verbose_name = '项目'
 		verbose_name_plural = '项目'
+		constraints = [models.UniqueConstraint(fields=['name', 'date'], name='program-name-date-unique')]
 
 	def __str__(self):
 		return '%s %s' % (self.name, str(self.date))
