@@ -2,6 +2,8 @@ from django.contrib import admin
 
 # Register your models here.
 from .models import *
+import datetime
+
 
 class IngredientAdmin(admin.ModelAdmin):
 	#inlines = (Dish2IngredientInline,)
@@ -79,6 +81,14 @@ class ProgramAdmin(admin.ModelAdmin):
 		Program2OilInline, 
 		Program2DisposableInline,
 	]
+	actions = ['duplicate_project']
+
+	def duplicate_project(modeladmin, request, queryset):
+		for project in queryset:
+			project.pk = None
+			project.date = datetime.date.today()
+			project.save()
+	duplicate_project.short_description = '复制所选的项目'
 
 class SuperProgramAdmin(admin.ModelAdmin):
 	pass
