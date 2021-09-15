@@ -210,3 +210,103 @@ class Program2Disposable(models.Model):
 	def __str__(self):
 		return '%s %s %d' % (str(self.program), str(self.disposable), self.count)
 
+
+# Standardized dishes
+class SDish(models.Model):
+	name = models.CharField(max_length=200, unique=True, verbose_name='菜品名称')
+
+	class Meta:
+		verbose_name = '菜品'
+		verbose_name_plural = '菜品'
+
+	def __str__(self):
+		return self.name
+
+
+class SDish2Standard(models.Model):
+	dish = models.ForeignKey(SDish, on_delete=models.CASCADE, verbose_name='菜品名称')
+	standard = models.CharField(max_length=200, verbose_name='标准名称')
+
+	class Meta:
+		verbose_name = '菜品标准'
+		verbose_name_plural = '菜品标准'
+
+	def __str__(self):
+		return '%s %s' % (str(self.dish), str(self.standard))
+
+class SDish2StandardIngredient(models.Model):
+	sdish2standard = models.ForeignKey(SDish2Standard, on_delete=models.CASCADE)
+
+	ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, verbose_name='配菜名称')
+	quantity = models.FloatField(verbose_name='重量')
+
+	class Meta:
+		verbose_name = '此标准的配菜'
+		verbose_name_plural = '此标准的配菜'
+
+	def __str__(self):
+		return ''
+
+# Central Kitchen Projects
+class Meal(models.TextChoices):
+	BREAKFAST = 'B', '早餐'
+	LUNCH = 'L', '午餐'
+	DINNER = 'D', '晚餐'
+	MIDNIGHT = 'M', '夜餐'
+
+class Course(models.TextChoices):
+	PRIMARY_MEAT = 'PM', '主荤'
+	SECONDARY_MEAT = 'SM', '次荤'
+	VEGETABLES = 'VG', '素菜'
+	SPECIALS = 'SP', '特色'
+
+class CKProject(models.Model):
+	name = models.CharField(max_length=200, verbose_name='中央厨房项目名称')
+	date = models.DateField(default=datetime.date.today, verbose_name='日期')
+
+	sdishe2standards = models.ManyToManyField(SDish2Standard, through='CKProject2SDish2Standard')
+
+	class Meta:
+		verbose_name = '中央厨房项目'
+		verbose_name_plural = '中央厨房项目'
+
+	def __str__(self):
+		return '%s %s' % (self.name, str(self.date))
+
+
+class CKProject2SDish2Standard(models.Model):
+	project = models.ForeignKey(CKProject, on_delete=models.CASCADE, verbose_name='中央厨房项目名称')
+	sdish2standard = models.ForeignKey(SDish2Standard, on_delete=models.CASCADE, verbose_name='菜品名称')
+
+	meal = models.CharField(max_length=1, choices=Meal.choices, default=Meal.LUNCH, verbose_name='用餐时间')
+	course = models.CharField(max_length=2, choices=Course.choices, default=Course.PRIMARY_MEAT, verbose_name='菜品分类')
+
+	class Meta:
+		verbose_name = '项目菜品'
+		verbose_name_plural = '项目菜品'
+
+	def __str__(self):
+		return ''
+
+class CKProjectLocation(models.Model):
+	name = models.CharField(max_length=200, verbose_name='中央厨房餐点名称')
+
+	class Meta:
+		verbose_name = '中央厨房餐点'
+		verbose_name_plural = '中央厨房餐点'
+
+	def __str__(self):
+		return self.name
+
+class CKProject2SDish2StandardCount(models.Model):
+	project2dish2standard = models.ForeignKey(CKProject2SDish2Standard, on_delete=models.CASCADE)
+
+	location = models.ForeignKey(CKProjectLocation, on_delete=models.CASCADE, verbose_name='送餐点')
+	count = models.IntegerField(verbose_name='份数')
+
+	class Meta:
+		verbose_name = '送餐点及份数'
+		verbose_name_plural = '送餐点及份数'
+
+	def __str__(self):
+		return ''

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 
 	# custom apps below
 	'menu.apps.MenuConfig',
+	'nested_admin',
 ]
 
 MIDDLEWARE = [
