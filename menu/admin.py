@@ -217,11 +217,12 @@ class CKProject2SDish2StandardMidnightInline(nested_admin.NestedStackedInline):
 
 
 class CKProjectAdmin(nested_admin.NestedModelAdmin):
-    inlines = [CKProject2SDish2StandardBreakfastInline,
-               CKProject2SDish2StandardLunchInline,
-               CKProject2SDish2StandardDinnerInline,
-               CKProject2SDish2StandardMidnightInline
-               ]
+    inlines = [
+        CKProject2SDish2StandardBreakfastInline,
+        CKProject2SDish2StandardLunchInline,
+        CKProject2SDish2StandardDinnerInline,
+        CKProject2SDish2StandardMidnightInline
+    ]
     actions = ['duplicate_project', 'generate_weekly_report']
 
     @admin.action(description='复制所选的项目')
