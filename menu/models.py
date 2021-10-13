@@ -289,7 +289,7 @@ class CKProject(models.Model):
     name = models.CharField(max_length=200, verbose_name='中央厨房项目名称')
     date = models.DateField(default=datetime.date.today, verbose_name='日期')
 
-    sdishe2standards = models.ManyToManyField(SDish2Standard, through='CKProject2SDish2Standard')
+    sdish2standards = models.ManyToManyField(SDish2Standard, through='CKProject2SDish2Standard')
 
     class Meta:
         verbose_name = '中央厨房项目'

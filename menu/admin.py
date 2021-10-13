@@ -257,7 +257,7 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
             # This save is required for the following m2m copy
             project_copy.save()
 
-            for dish in project.sdishe2standards.all():
+            for dish in project.sdish2standards.all():
                 p2d = CKProject2SDish2Standard.objects.get(
                     project__pk=project.pk,
                     sdish2standard__pk=dish.pk
