@@ -248,11 +248,16 @@ class SDish2Standard(models.Model):
         verbose_name_plural = '菜品标准'
 
     def __str__(self):
-        return '%s %s' % (str(self.dish), str(self.standard))
+        # Use the Chinese parentheses (2 characters)
+        return '%s（%s）' % (str(self.dish), str(self.standard))
 
 
 class SDish2StandardIngredient(models.Model):
-    sdish2standard = models.ForeignKey(SDish2Standard, on_delete=models.CASCADE)
+    sdish2standard = models.ForeignKey(
+        SDish2Standard,
+        on_delete=models.CASCADE,
+        related_name='ingredients'
+    )
 
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, verbose_name='配菜名称')
     quantity = models.FloatField(verbose_name='重量')
@@ -321,9 +326,14 @@ class CKProjectLocation(models.Model):
 
 
 class CKProject2SDish2StandardCount(models.Model):
-    project2dish2standard = models.ForeignKey(CKProject2SDish2Standard, on_delete=models.CASCADE)
-
-    location = models.ForeignKey(CKProjectLocation, on_delete=models.CASCADE, verbose_name='送餐点')
+    project2dish2standard = models.ForeignKey(
+        CKProject2SDish2Standard,
+        on_delete=models.CASCADE,
+        related_name='locations_counts')
+    location = models.ForeignKey(
+        CKProjectLocation,
+        on_delete=models.CASCADE,
+        verbose_name='送餐点')
     count = models.IntegerField(verbose_name='份数')
 
     class Meta:

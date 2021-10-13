@@ -1,10 +1,16 @@
-from django.contrib import admin
-from .models import *
-import django.forms as forms
-import datetime
-import nested_admin
 import copy
+
+import django.forms as forms
+from django.contrib import admin, messages
+from django.http import HttpResponse
 from django.shortcuts import render
+
+import nested_admin
+import openpyxl
+
+from .models import *
+from .views.ck_reports import generate_ckproject_weekly_report
+from .views.reportutils import rfc5987_content_disposition
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -98,15 +104,6 @@ class ProgramAdmin(admin.ModelAdmin):
         Program2OilInline,
         Program2DisposableInline,
     ]
-    actions = ['duplicate_project']
-
-    def duplicate_project(modeladmin, request, queryset):
-        for project in queryset:
-            project.pk = None
-            project.date = datetime.date.today()
-            project.save()
-
-    duplicate_project.short_description = '复制所选的项目'
 
 
 class SuperProgramAdmin(admin.ModelAdmin):
@@ -146,7 +143,7 @@ class SDish2StandardAdmin(admin.ModelAdmin):
         return False
 
 
-def ckProject2SDish2StandardFormFactory(meal):
+def ckproject2dish2standard_formfactory(meal):
     class CKProject2SDish2StandardForm(forms.ModelForm):
         class Meta:
             model = CKProject2SDish2Standard
@@ -165,7 +162,7 @@ def ckProject2SDish2StandardFormFactory(meal):
 
 class CKProject2SDish2StandardBreakfastInline(nested_admin.NestedStackedInline):
     model = CKProject2SDish2Standard
-    form = ckProject2SDish2StandardFormFactory(Meal.BREAKFAST)
+    form = ckproject2dish2standard_formfactory(Meal.BREAKFAST)
     # exclude = ('meal', )
     autocomplete_fields = ['sdish2standard']
     inlines = [CKProject2SDish2StandardCountInline]
@@ -179,7 +176,7 @@ class CKProject2SDish2StandardBreakfastInline(nested_admin.NestedStackedInline):
 
 class CKProject2SDish2StandardLunchInline(nested_admin.NestedStackedInline):
     model = CKProject2SDish2Standard
-    form = ckProject2SDish2StandardFormFactory(Meal.LUNCH)
+    form = ckproject2dish2standard_formfactory(Meal.LUNCH)
     # exclude = ('meal', )
     autocomplete_fields = ['sdish2standard']
     inlines = [CKProject2SDish2StandardCountInline]
@@ -193,7 +190,7 @@ class CKProject2SDish2StandardLunchInline(nested_admin.NestedStackedInline):
 
 class CKProject2SDish2StandardDinnerInline(nested_admin.NestedStackedInline):
     model = CKProject2SDish2Standard
-    form = ckProject2SDish2StandardFormFactory(Meal.DINNER)
+    form = ckproject2dish2standard_formfactory(Meal.DINNER)
     # exclude = ('meal', )
     autocomplete_fields = ['sdish2standard']
     inlines = [CKProject2SDish2StandardCountInline]
@@ -207,7 +204,7 @@ class CKProject2SDish2StandardDinnerInline(nested_admin.NestedStackedInline):
 
 class CKProject2SDish2StandardMidnightInline(nested_admin.NestedStackedInline):
     model = CKProject2SDish2Standard
-    form = ckProject2SDish2StandardFormFactory(Meal.MIDNIGHT)
+    form = ckproject2dish2standard_formfactory(Meal.MIDNIGHT)
     # exclude = ('meal', )
     autocomplete_fields = ['sdish2standard']
     inlines = [CKProject2SDish2StandardCountInline]
@@ -225,7 +222,7 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
                CKProject2SDish2StandardDinnerInline,
                CKProject2SDish2StandardMidnightInline
                ]
-    actions = ['duplicate_project']
+    actions = ['duplicate_project', 'generate_weekly_report']
 
     @admin.action(description='复制所选的项目')
     def duplicate_project(self, request, queryset):
@@ -243,6 +240,7 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
             return render(request, 'menu/ckproject_duplicate_date.html', {
                 'queryset': queryset,
                 'formset': forms.formset_factory(CKProjectDateForm, extra=queryset.count())(),
+                'title': '选择日期',
                 # For styles
                 **self.admin_site.each_context(request),
                 'opts': self.model._meta,
@@ -259,7 +257,10 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
             project_copy.save()
 
             for dish in project.sdishe2standards.all():
-                p2d = CKProject2SDish2Standard.objects.get(project__pk=project.pk, sdish2standard__pk=dish.pk)
+                p2d = CKProject2SDish2Standard.objects.get(
+                    project__pk=project.pk,
+                    sdish2standard__pk=dish.pk
+                )
                 p2d_copy = CKProject2SDish2Standard(
                     project=project_copy,
                     sdish2standard=dish,
@@ -277,6 +278,37 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
                     )
 
             project_copy.save()
+
+    @staticmethod
+    def check_dates_same_week(dates):
+        """ dates should go from Monday to Sunday """
+        if len(dates) != 7:
+            return False
+        for i in range(7):
+            if dates[i].weekday() != i:
+                return False
+        return True
+
+    @admin.action(description='为所选项目生成周报告')
+    def generate_weekly_report(self, request, queryset):
+        project_names = queryset.values_list('name', flat=True).distinct()
+        project_name_count = project_names.count()
+        if project_name_count > 1:
+            self.message_user(request, "只能为相同名称的项目生成报告", level=messages.ERROR)
+            return
+
+        dates = list(queryset.values_list('date', flat=True).order_by('date'))
+        if not self.check_dates_same_week(dates):
+            self.message_user(request, '所向项目的日期必须是周一到周日', level=messages.ERROR)
+
+        wb = generate_ckproject_weekly_report(queryset.order_by('date'))
+        response = HttpResponse(
+            content=openpyxl.writer.excel.save_virtual_workbook(wb),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = '%s菜单计划量%d月%d日.xlsx' % (project_names[0], dates[0].month, dates[0].day)
+        response['Content-Disposition'] = rfc5987_content_disposition(filename)
+        return response
 
 
 admin.site.register(Ingredient, IngredientAdmin)
