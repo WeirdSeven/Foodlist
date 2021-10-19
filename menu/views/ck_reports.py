@@ -217,6 +217,4 @@ def generate_ckproject_weekly_report(projects):
     for project in projects:
         generate_ckproject_weekly_report_day(wb, project)
 
-    # TODO: Return the workbook as a download
     return wb
-    # wb.save('reports/mytest.xlsx')
