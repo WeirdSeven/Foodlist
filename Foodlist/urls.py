@@ -19,10 +19,10 @@ from django.contrib import admin
 from . import views
 
 urlpatterns = [
-	path('', views.index),
+	# path('', views.index),
 	# path('admin/jsi18n', JavaScriptCatalog.as_view(), name='jsi18n'),
-	path('admin/', admin.site.urls, name='admin'),
-	path('menu/', include('menu.urls')),
+	path('', admin.site.urls, name='admin'),
+	# path('menu/', include('menu.urls')),
 ]
 
 admin.site.site_header = '得来奇管理系统'
