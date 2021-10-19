@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
 from functools import partial
+
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 
@@ -17,6 +19,7 @@ from .excelutils import (
 from ..models import (
     CKProject2SDish2Standard,
     CKProject2SDish2StandardCount,
+    Course,
     Meal,
     SDish2StandardIngredient
 )
@@ -31,7 +34,122 @@ weekday_to_name = {1: '周一',
 
 
 def generate_ckproject_weekly_report_menu(wb, projects):
-    wb.create_sheet('周菜单')
+    sheet_name = '周菜单'
+    wb.create_sheet(sheet_name)
+    sheet = wb[sheet_name]
+
+    def merge_max(dict1, dict2):
+        all_keys = dict1.keys() | dict2.keys()
+        result = {}
+        for k in all_keys:
+            if k in dict1 and k in dict2:
+                result[k] = max(dict1[k], dict2[k])
+            elif k in dict1:
+                result[k] = dict1[k]
+            else:
+                result[k] = dict2[k]
+        return result
+
+    breakfast_courses = [
+        Course.SPECIAL,
+        Course.STAPLE,
+        Course.SIDE,
+        Course.COLD,
+        Course.PICKLE,
+        Course.SOUP
+    ]
+    regular_courses = [
+        Course.PRIMARY_MEAT,
+        Course.SECONDARY_MEAT,
+        Course.VEGETABLE,
+        Course.SPECIAL,
+        Course.FRUIT,
+        Course.GRAIN,
+        Course.SOUP
+    ]
+    course_by_meal = {
+        Meal.BREAKFAST: breakfast_courses,
+        Meal.LUNCH: regular_courses,
+        Meal.DINNER: regular_courses,
+        Meal.MIDNIGHT: regular_courses
+    }
+
+    column_meal = 1
+    column_course = 2
+
+    weekdays = [project.date.isoweekday() for project in projects]
+    p2ds_week = [CKProject2SDish2Standard.objects.filter(project=project) for project in projects]
+
+    meal_start_row = 1
+    for meal in Meal:
+        p2ds_meal = [p2ds_day.filter(meal=meal) for p2ds_day in p2ds_week]
+
+        cur_meal_courses = course_by_meal[meal]
+        course_counts = {course: 1 for course in cur_meal_courses}
+        for p2ds_day in p2ds_meal:
+            course_counts_day = defaultdict(int)
+            for p2d in p2ds_day:
+                course_counts_day[Course(p2d.course)] += 1
+            course_counts = merge_max(course_counts, course_counts_day)
+
+        distinct_courses = course_counts.keys()
+        extra_courses = distinct_courses - cur_meal_courses
+        extra_courses_ordered = [course for course in Course if course in extra_courses]
+        all_courses_ordered = cur_meal_courses + extra_courses_ordered
+
+        # The Meal column
+        num_rows_meal = sum(course_counts.values())
+        sheet.merge_cells(
+            start_row=meal_start_row,
+            start_column=column_meal,
+            end_row=meal_start_row + num_rows_meal,
+            end_column=column_meal
+        )
+        sheet.cell(row=meal_start_row, column=column_meal).value = meal.label + '菜单'
+
+        # The Course column
+        sheet.cell(row=meal_start_row, column=column_course).value = '星期项目'
+        cur_course_row = meal_start_row + 1
+        for course in all_courses_ordered:
+            cur_course_count = course_counts[course]
+            sheet.merge_cells(
+                start_row=cur_course_row,
+                start_column=column_course,
+                end_row=cur_course_row + cur_course_count - 1,
+                end_column=column_course
+            )
+            sheet.cell(row=cur_course_row, column=column_course).value = course.label
+            cur_course_row += cur_course_count
+
+        # The dish columns of weekdays
+        for i in weekdays:
+            cur_weekday_column = column_course + i
+            sheet.cell(row=meal_start_row, column=cur_weekday_column).value = weekday_to_name[i]
+
+            cur_dish_row = meal_start_row + 1
+            for course in all_courses_ordered:
+                cur_course_count = course_counts[course]
+                p2ds_course = p2ds_meal[i - 1].filter(course=course)
+                course_dish_names = [str(p2d.sdish2standard) for p2d in p2ds_course]
+                course_dish_names += ['无'] * (cur_course_count - len(course_dish_names))
+
+                for dish_name in course_dish_names:
+                    sheet.cell(row=cur_dish_row, column=cur_weekday_column).value = dish_name
+                    cur_dish_row += 1
+
+        # Set border
+        range_border_internal(sheet.iter_rows(
+            min_row=meal_start_row,
+            min_col=column_meal,
+            max_row=meal_start_row + num_rows_meal,
+            max_col=column_course + len(weekdays)
+        ), SIDE_MEDIUM, SIDE_THIN)
+
+        meal_start_row += num_rows_meal + 2  # 2 comes from a header row and and a blank row
+
+    # Set column widths and cell alignment
+    auto_set_width(sheet)
+    set_alignment(sheet, Alignment(horizontal='center', vertical="center"))
 
 
 def get_project_locations_by_meal(p2ds, meal):
