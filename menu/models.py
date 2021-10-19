@@ -281,8 +281,16 @@ class Meal(models.TextChoices):
 class Course(models.TextChoices):
     PRIMARY_MEAT = 'PM', '主荤'
     SECONDARY_MEAT = 'SM', '次荤'
-    VEGETABLES = 'VG', '素菜'
-    SPECIALS = 'SP', '特色'
+    VEGETABLE = 'VG', '素菜'
+    SPECIAL = 'SP', '特色'
+    FRUIT = 'FR', '水果'
+    GRAIN = 'GR', '杂粮'
+    SOUP = 'SU', '汤粥'
+    STAPLE = 'ST', '主食'
+    SIDE = 'SD', '副食'
+    COLD = 'CD', '凉菜'
+    PICKLE = 'PK', '咸菜'
+
 
 
 class CKProject(models.Model):
