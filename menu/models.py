@@ -4,14 +4,28 @@ from django.db import models
 import datetime
 
 
+class IngredientCategory(models.TextChoices):
+    VEGETABLE = 'VG', '蔬菜'
+    MEAT = 'MT', '肉类'
+    CONDIMENT = 'CND', '调料'
+    RICE_NOODLE_OIL = 'RNO', '米面油'
+    DISPOSABLE = 'DSP', '低值易耗'
+
+
 class Ingredient(models.Model):
-    name = models.CharField(max_length=200, unique=True, verbose_name='配料名称')
+    name = models.CharField(max_length=200, unique=True, verbose_name='原材料名称')
+    category = models.CharField(
+        max_length=3,
+        choices=IngredientCategory.choices,
+        default=IngredientCategory.VEGETABLE,
+        verbose_name='原材料分类'
+    )
     ratio = models.FloatField(default=1, verbose_name='转化率')
-    price = models.FloatField(verbose_name='单价(元/斤)')
+    price = models.FloatField(verbose_name='单价(元/斤或个)')
 
     class Meta:
-        verbose_name = '配菜'
-        verbose_name_plural = '配菜'
+        verbose_name = '原材料'
+        verbose_name_plural = '原材料'
 
     def __str__(self):
         return self.name
@@ -259,12 +273,12 @@ class SDish2StandardIngredient(models.Model):
         related_name='ingredients'
     )
 
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, verbose_name='配菜名称')
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE, verbose_name='原材料名称')
     quantity = models.FloatField(verbose_name='重量')
 
     class Meta:
-        verbose_name = '此标准的配菜'
-        verbose_name_plural = '此标准的配菜'
+        verbose_name = '此标准的原材料'
+        verbose_name_plural = '此标准的原材料'
 
     def __str__(self):
         return ''
@@ -291,6 +305,16 @@ class Course(models.TextChoices):
     COLD = 'CD', '凉菜'
     PICKLE = 'PK', '咸菜'
 
+
+class Project(models.Model):
+    name = models.CharField(max_length=200, verbose_name='项目名称')
+
+    class Meta:
+        verbose_name = '项目'
+        verbose_name_plural = '项目'
+
+    def __str__(self):
+        return self.name
 
 
 class CKProject(models.Model):
@@ -350,3 +374,52 @@ class CKProject2SDish2StandardCount(models.Model):
 
     def __str__(self):
         return ''
+
+
+class ProjectPurchaseOrder(models.Model):
+    project = models.ForeignKey(Project, models.CASCADE, verbose_name='项目')
+    date = models.DateField(default=datetime.date.today, verbose_name='日期')
+
+    class Meta:
+        verbose_name = '项目采购清单'
+        verbose_name_plural = '项目采购清单'
+
+    def __str__(self):
+        return '%s %s' % (str(self.project), str(self.date))
+
+
+class ProjectPurchaseOrderItem(models.Model):
+    order = models.ForeignKey(ProjectPurchaseOrder, models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, models.SET_NULL, null=True, verbose_name='原材料')
+    quantity = models.FloatField(verbose_name='数量')
+
+    class Meta:
+        verbose_name = '项目采购品'
+        verbose_name_plural = '项目采购品'
+
+    def __str__(self):
+        return '%s %s' % (str(self.ingredient), self.quantity)
+
+
+class PurchaseOrderSummary(models.Model):
+    date = models.DateField(default=datetime.date.today, verbose_name='日期')
+
+    class Meta:
+        verbose_name = '采购清单汇总'
+        verbose_name_plural = '采购清单汇总'
+
+    def __str__(self):
+        return str(self.date)
+
+
+class PurchaseOrderSummaryItem(models.Model):
+    summary = models.ForeignKey(PurchaseOrderSummary, models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, models.CASCADE, null=True, verbose_name='原材料')
+    quantity = models.FloatField(verbose_name='数量')
+
+    class Meta:
+        verbose_name = '采购品'
+        verbose_name_plural = '采购品'
+
+    def __str__(self):
+        return '%s %s' % (str(self.ingredient), self.quantity)

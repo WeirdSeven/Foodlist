@@ -1,15 +1,19 @@
 import copy
+from collections import defaultdict
 
 import django.forms as forms
 from django.contrib import admin, messages
+from django.contrib.admin.widgets import AutocompleteSelect
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.utils.http import urlencode
 
 import nested_admin
 import openpyxl
 
 from .models import *
 from .views.ck_reports import generate_ckproject_weekly_report
+from .views.purchase_order import download_purchase_order_summary
 from .views.reportutils import rfc5987_content_disposition
 
 
@@ -17,7 +21,17 @@ class IngredientAdmin(admin.ModelAdmin):
     exclude = ('ratio',)
     ordering = ['name']
     search_fields = ['name']
-    list_display = ['name', 'price']
+    list_display = ['name', 'category', 'price']
+    list_filter = ['category']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+
+        # Enables autocomplete choices
+        # to pre-filter based on category
+        if 'category' in request.GET:
+            qs = qs.filter(category=request.GET['category'])
+        return qs
 
 
 class Dish2IngredientInline(admin.TabularInline):
@@ -258,6 +272,151 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         filename = '%s菜单计划量%d月%d日.xlsx' % (project_names[0], dates[0].month, dates[0].day)
+        response['Content-Disposition'] = rfc5987_content_disposition(filename)
+        return response
+
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+
+
+def purchase_order_item_inline(model_class, category, extra_item=3, max_item=None):
+    class AutoCompleteSelectWithCategory(AutocompleteSelect):
+        def get_url(self):
+            url = super().get_url()
+            url += '?' + urlencode({
+                'category': category.value
+            })
+            return url
+
+    class ProjectPurchaseOrderItemForm(forms.ModelForm):
+        class Meta:
+            fields = '__all__'
+            widgets = {
+                'ingredient': AutoCompleteSelectWithCategory(
+                    ProjectPurchaseOrderItem._meta.get_field('ingredient'),
+                    admin.site
+                )
+            }
+
+    class ProjectPurchaseOrderItemInline(admin.TabularInline):
+        model = model_class
+        form = ProjectPurchaseOrderItemForm
+        verbose_name = category.label
+        verbose_name_plural = category.label
+        extra = extra_item
+        max_num = max_item
+        autocomplete_fields = ['ingredient']
+
+        def get_queryset(self, request):
+            return super().get_queryset(request).filter(
+                ingredient__category=category
+            )
+
+        def formfield_for_foreignkey(self, db_field, request, **kwargs):
+            if db_field.name == "ingredient":
+                kwargs["queryset"] = Ingredient.objects.filter(category=category)
+            return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    return ProjectPurchaseOrderItemInline
+
+
+@admin.register(ProjectPurchaseOrder)
+class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
+    inlines = [
+        purchase_order_item_inline(ProjectPurchaseOrderItem, category, 2)
+        for category in IngredientCategory
+    ]
+    autocomplete_fields = ['project']
+
+    @staticmethod
+    def find_existing_match(existing_items, item):
+        for existing_item in existing_items:
+            if item.ingredient == existing_item.ingredient:
+                return existing_item
+        return None
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        try:
+            PurchaseOrderSummary.objects.get(date=obj.date)
+        except PurchaseOrderSummary.DoesNotExist:
+            PurchaseOrderSummary.objects.create(date=obj.date)
+
+    def delete_model(self, request, obj):
+        date = copy.copy(obj.date)
+        super().delete_model(request, obj)
+
+        orders = ProjectPurchaseOrder.objects.filter(date=date)
+        if len(orders) == 0:
+            try:
+                summary = PurchaseOrderSummary.objects.get(date=date)
+                summary.delete()
+            except PurchaseOrderSummary.DoesNotExist:
+                pass
+
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            self.delete_model(request, obj)
+
+
+@admin.register(PurchaseOrderSummary)
+class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
+    inlines = [
+        purchase_order_item_inline(PurchaseOrderSummaryItem, category, 0, 0)
+        for category
+        in IngredientCategory
+    ]
+    actions = ['download_purchase_order_summary']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        # Recalculate the summary
+        summary = PurchaseOrderSummary.objects.get(id=object_id)
+        PurchaseOrderSummaryItem.objects.filter(summary=summary).delete()
+
+        items = ProjectPurchaseOrderItem.objects.filter(order__date=summary.date)
+        ingredient_quantities = defaultdict(float)
+        for item in items:
+            ingredient_quantities[item.ingredient] += item.quantity
+        for ingredient, quantity in ingredient_quantities.items():
+            PurchaseOrderSummaryItem.objects.create(
+                summary=summary,
+                ingredient=ingredient,
+                quantity=quantity
+            )
+        summary.save()
+
+        # Hide the save-related buttons
+        extra_context = extra_context or {}
+        extra_context['show_save'] = False
+        extra_context['show_save_and_continue'] = False
+        extra_context['show_save_and_add_another'] = False
+
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    @admin.action(description='下载采购清单汇总')
+    def download_purchase_order_summary(self, request, queryset):
+        if len(queryset) > 1:
+            self.message_user(request, '只能选择一个日期', level=messages.ERROR)
+
+        date = queryset[0].date
+        wb = download_purchase_order_summary(date)
+        response = HttpResponse(
+            content=openpyxl.writer.excel.save_virtual_workbook(wb),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = '采购清单%d月%d日.xlsx' % (date.month, date.day)
         response['Content-Disposition'] = rfc5987_content_disposition(filename)
         return response
 
