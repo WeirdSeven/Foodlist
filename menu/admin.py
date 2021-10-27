@@ -143,85 +143,35 @@ class SDish2StandardAdmin(admin.ModelAdmin):
         return False
 
 
-def ckproject2dish2standard_formfactory(meal):
+def ckproject2dish2standard_inline(meal):
     class CKProject2SDish2StandardForm(forms.ModelForm):
         class Meta:
             model = CKProject2SDish2Standard
-            fields = '__all__'
-            # exclude = ('meal', )
+            exclude = ['meal']
 
-        def __init__(self, *args, **kwargs):
-            if 'initial' not in kwargs:
-                kwargs['initial'] = {}
-            kwargs['initial'].update({'meal': meal})
-            super(CKProject2SDish2StandardForm, self).__init__(*args, **kwargs)
-            # self.fields['meal'].initial = meal
+        def save(self, commit=True):
+            self.instance.meal = meal
+            return super().save(commit)
 
-    return CKProject2SDish2StandardForm
+    class CKProject2SDish2StandardInline(nested_admin.NestedStackedInline):
+        model = CKProject2SDish2Standard
+        form = CKProject2SDish2StandardForm
+        autocomplete_fields = ['sdish2standard']
+        inlines = [CKProject2SDish2StandardCountInline]
+        verbose_name = meal.label
+        verbose_name_plural = meal.label
+        extra = 0
 
+        def get_queryset(self, request):
+            return super().get_queryset(request).filter(meal=meal)
 
-class CKProject2SDish2StandardBreakfastInline(nested_admin.NestedStackedInline):
-    model = CKProject2SDish2Standard
-    form = ckproject2dish2standard_formfactory(Meal.BREAKFAST)
-    # exclude = ('meal', )
-    autocomplete_fields = ['sdish2standard']
-    inlines = [CKProject2SDish2StandardCountInline]
-    verbose_name = '早餐'
-    verbose_name_plural = '早餐'
-    extra = 1
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).filter(meal=Meal.BREAKFAST)
-
-
-class CKProject2SDish2StandardLunchInline(nested_admin.NestedStackedInline):
-    model = CKProject2SDish2Standard
-    form = ckproject2dish2standard_formfactory(Meal.LUNCH)
-    # exclude = ('meal', )
-    autocomplete_fields = ['sdish2standard']
-    inlines = [CKProject2SDish2StandardCountInline]
-    verbose_name = '午餐'
-    verbose_name_plural = '午餐'
-    extra = 1
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).filter(meal=Meal.LUNCH)
-
-
-class CKProject2SDish2StandardDinnerInline(nested_admin.NestedStackedInline):
-    model = CKProject2SDish2Standard
-    form = ckproject2dish2standard_formfactory(Meal.DINNER)
-    # exclude = ('meal', )
-    autocomplete_fields = ['sdish2standard']
-    inlines = [CKProject2SDish2StandardCountInline]
-    verbose_name = '晚餐'
-    verbose_name_plural = '晚餐'
-    extra = 1
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).filter(meal=Meal.DINNER)
-
-
-class CKProject2SDish2StandardMidnightInline(nested_admin.NestedStackedInline):
-    model = CKProject2SDish2Standard
-    form = ckproject2dish2standard_formfactory(Meal.MIDNIGHT)
-    # exclude = ('meal', )
-    autocomplete_fields = ['sdish2standard']
-    inlines = [CKProject2SDish2StandardCountInline]
-    verbose_name = '夜餐'
-    verbose_name_plural = '夜餐'
-    extra = 1
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).filter(meal=Meal.MIDNIGHT)
+    return CKProject2SDish2StandardInline
 
 
 class CKProjectAdmin(nested_admin.NestedModelAdmin):
     inlines = [
-        CKProject2SDish2StandardBreakfastInline,
-        CKProject2SDish2StandardLunchInline,
-        CKProject2SDish2StandardDinnerInline,
-        CKProject2SDish2StandardMidnightInline
+        ckproject2dish2standard_inline(meal)
+        for meal in Meal
     ]
     actions = ['duplicate_project', 'generate_weekly_report']
 
