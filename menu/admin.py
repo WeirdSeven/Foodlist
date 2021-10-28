@@ -17,6 +17,7 @@ from .views.purchase_order import download_purchase_order_summary
 from .views.reportutils import rfc5987_content_disposition
 
 
+@admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     exclude = ('ratio',)
     ordering = ['name']
@@ -34,104 +35,94 @@ class IngredientAdmin(admin.ModelAdmin):
         return qs
 
 
-class Dish2IngredientInline(admin.TabularInline):
-    model = Dish2Ingredient
-    autocomplete_fields = ['ingredient']
-    extra = 1
-
-
-class DishAdmin(admin.ModelAdmin):
-    inlines = [Dish2IngredientInline]
-    search_fields = ['name']
-
-
-class Program2DishInline(admin.TabularInline):
-    model = Program2Dish
-    autocomplete_fields = ['dish']
-    extra = 1
-
-
-class CongeeSoup2IngredientInline(admin.TabularInline):
-    model = CongeeSoup2Ingredient
-    autocomplete_fields = ['ingredient']
-    extra = 1
-
-
-class CongeeSoupAdmin(admin.ModelAdmin):
-    inlines = [CongeeSoup2IngredientInline]
-    search_fields = ['name']
-
-
-class Program2CongeeSoupInline(admin.TabularInline):
-    model = Program2CongeeSoup
-    autocomplete_fields = ['congeesoup']
-    extra = 1
-
-
-class StapleAdmin(admin.ModelAdmin):
-    search_fields = ['name']
-
-
-class Program2StapleInline(admin.TabularInline):
-    model = Program2Staple
-    autocomplete_fields = ['staple']
-    extra = 1
-
-
-class CondimentAdmin(admin.ModelAdmin):
-    search_fields = ['name']
-
-
-class Program2CondimentInline(admin.TabularInline):
-    model = Program2Condiment
-    autocomplete_fields = ['condiment']
-    extra = 1
-
-
-class OilAdmin(admin.ModelAdmin):
-    search_fields = ['name']
-
-
-class Program2OilInline(admin.TabularInline):
-    model = Program2Oil
-    autocomplete_fields = ['oil']
-    extra = 1
-
-
-class DisposableAdmin(admin.ModelAdmin):
-    search_fields = ['name']
-
-
-class Program2DisposableInline(admin.TabularInline):
-    model = Program2Disposable
-    autocomplete_fields = ['disposable']
-    extra = 1
-
-
-class ProgramAdmin(admin.ModelAdmin):
-    fields = ('name', 'superprogram', 'date', ('condiments_price', 'condiments_bool'))
-    inlines = [
-        Program2DishInline,
-        Program2CongeeSoupInline,
-        Program2StapleInline,
-        Program2CondimentInline,
-        Program2OilInline,
-        Program2DisposableInline,
-    ]
-
-
-class SuperProgramAdmin(admin.ModelAdmin):
-    pass
-
-
-class CKProjectLocationAdmin(admin.ModelAdmin):
-    search_fields = ['name']
-
-
-class CKProject2SDish2StandardCountInline(nested_admin.NestedTabularInline):
-    autocomplete_fields = ['location']
-    model = CKProject2SDish2StandardCount
-    extra = 1
+# class Dish2IngredientInline(admin.TabularInline):
+#     model = Dish2Ingredient
+#     autocomplete_fields = ['ingredient']
+#     extra = 1
+#
+#
+# class DishAdmin(admin.ModelAdmin):
+#     inlines = [Dish2IngredientInline]
+#     search_fields = ['name']
+#
+#
+# class Program2DishInline(admin.TabularInline):
+#     model = Program2Dish
+#     autocomplete_fields = ['dish']
+#     extra = 1
+#
+#
+# class CongeeSoup2IngredientInline(admin.TabularInline):
+#     model = CongeeSoup2Ingredient
+#     autocomplete_fields = ['ingredient']
+#     extra = 1
+#
+#
+# class CongeeSoupAdmin(admin.ModelAdmin):
+#     inlines = [CongeeSoup2IngredientInline]
+#     search_fields = ['name']
+#
+#
+# class Program2CongeeSoupInline(admin.TabularInline):
+#     model = Program2CongeeSoup
+#     autocomplete_fields = ['congeesoup']
+#     extra = 1
+#
+#
+# class StapleAdmin(admin.ModelAdmin):
+#     search_fields = ['name']
+#
+#
+# class Program2StapleInline(admin.TabularInline):
+#     model = Program2Staple
+#     autocomplete_fields = ['staple']
+#     extra = 1
+#
+#
+# class CondimentAdmin(admin.ModelAdmin):
+#     search_fields = ['name']
+#
+#
+# class Program2CondimentInline(admin.TabularInline):
+#     model = Program2Condiment
+#     autocomplete_fields = ['condiment']
+#     extra = 1
+#
+#
+# class OilAdmin(admin.ModelAdmin):
+#     search_fields = ['name']
+#
+#
+# class Program2OilInline(admin.TabularInline):
+#     model = Program2Oil
+#     autocomplete_fields = ['oil']
+#     extra = 1
+#
+#
+# class DisposableAdmin(admin.ModelAdmin):
+#     search_fields = ['name']
+#
+#
+# class Program2DisposableInline(admin.TabularInline):
+#     model = Program2Disposable
+#     autocomplete_fields = ['disposable']
+#     extra = 1
+#
+#
+# class ProgramAdmin(admin.ModelAdmin):
+#     fields = ('name', 'superprogram', 'date', ('condiments_price', 'condiments_bool'))
+#     inlines = [
+#         Program2DishInline,
+#         Program2CongeeSoupInline,
+#         Program2StapleInline,
+#         Program2CondimentInline,
+#         Program2OilInline,
+#         Program2DisposableInline,
+#     ]
+#
+#
+# class SuperProgramAdmin(admin.ModelAdmin):
+#     pass
 
 
 class SDish2StandardIngredientInline(nested_admin.NestedTabularInline):
@@ -146,15 +137,28 @@ class SDish2StandardInline(nested_admin.NestedStackedInline):
     extra = 1
 
 
+@admin.register(SDish)
 class SDishAdmin(nested_admin.NestedModelAdmin):
     inlines = [SDish2StandardInline]
 
 
+@admin.register(SDish2Standard)
 class SDish2StandardAdmin(admin.ModelAdmin):
     search_fields = ['dish__name', 'standard']
 
     def has_module_permission(self, request):
         return False
+
+
+@admin.register(CKProjectLocation)
+class CKProjectLocationAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+
+
+class CKProject2SDish2StandardCountInline(nested_admin.NestedTabularInline):
+    autocomplete_fields = ['location']
+    model = CKProject2SDish2StandardCount
+    extra = 1
 
 
 def ckproject2dish2standard_inline(meal):
@@ -176,12 +180,21 @@ def ckproject2dish2standard_inline(meal):
         verbose_name_plural = meal.label
         extra = 0
 
+        def get_formset(self, request, obj=None, **kwargs):
+            formset = super().get_formset(request, obj, **kwargs)
+            sdish2standard = formset.form.base_fields['sdish2standard']
+            sdish2standard.widget.can_add_related = False
+            sdish2standard.widget.can_change_related = False
+            sdish2standard.widget.can_delete_related = False
+            return formset
+
         def get_queryset(self, request):
             return super().get_queryset(request).filter(meal=meal)
 
     return CKProject2SDish2StandardInline
 
 
+@admin.register(CKProject)
 class CKProjectAdmin(nested_admin.NestedModelAdmin):
     inlines = [
         ckproject2dish2standard_inline(meal)
@@ -422,19 +435,3 @@ class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
         filename = '采购清单%d月%d日.xlsx' % (date.month, date.day)
         response['Content-Disposition'] = rfc5987_content_disposition(filename)
         return response
-
-
-admin.site.register(Ingredient, IngredientAdmin)
-# admin.site.register(Dish, DishAdmin)
-# admin.site.register(CongeeSoup, CongeeSoupAdmin)
-# admin.site.register(Staple, StapleAdmin)
-# admin.site.register(Condiment, CondimentAdmin)
-# admin.site.register(Oil, OilAdmin)
-# admin.site.register(Disposable, DisposableAdmin)
-# admin.site.register(Program, ProgramAdmin)
-# admin.site.register(SuperProgram, SuperProgramAdmin)
-
-admin.site.register(CKProjectLocation, CKProjectLocationAdmin)
-admin.site.register(CKProject, CKProjectAdmin)
-admin.site.register(SDish, SDishAdmin)
-admin.site.register(SDish2Standard, SDish2StandardAdmin)
