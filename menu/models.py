@@ -4,6 +4,18 @@ from django.db import models
 import datetime
 
 
+def prioritized_admin_name(verbose_name, priority):
+    """
+    This is quite hacky. It returns the verbose name
+    prefixed with a number of spaces. More spaces
+    means higher priority.
+    :param verbose_name: The model name to display
+    :param priority: An int less than 100 (can be negative)
+    :return: prioritized name
+    """
+    return ' ' * (100 - priority) + verbose_name
+
+
 class IngredientCategory(models.TextChoices):
     VEGETABLE = 'VG', '蔬菜'
     MEAT = 'MT', '肉类'
@@ -25,7 +37,7 @@ class Ingredient(models.Model):
 
     class Meta:
         verbose_name = '原材料'
-        verbose_name_plural = '原材料'
+        verbose_name_plural = prioritized_admin_name(verbose_name, 1)
 
     def __str__(self):
         return self.name
@@ -247,7 +259,7 @@ class SDish(models.Model):
 
     class Meta:
         verbose_name = '菜品'
-        verbose_name_plural = '菜品'
+        verbose_name_plural = prioritized_admin_name(verbose_name, 2)
 
     def __str__(self):
         return self.name
@@ -311,7 +323,7 @@ class Project(models.Model):
 
     class Meta:
         verbose_name = '项目'
-        verbose_name_plural = '项目'
+        verbose_name_plural = prioritized_admin_name(verbose_name, 3)
 
     def __str__(self):
         return self.name
@@ -324,8 +336,8 @@ class CKProject(models.Model):
     sdish2standards = models.ManyToManyField(SDish2Standard, through='CKProject2SDish2Standard')
 
     class Meta:
-        verbose_name = '中央厨房项目'
-        verbose_name_plural = '中央厨房项目'
+        verbose_name = '中央厨房菜单'
+        verbose_name_plural = prioritized_admin_name(verbose_name, 5)
 
     def __str__(self):
         return '%s %s' % (self.name, str(self.date))
@@ -347,11 +359,11 @@ class CKProject2SDish2Standard(models.Model):
 
 
 class CKProjectLocation(models.Model):
-    name = models.CharField(max_length=200, verbose_name='中央厨房餐点名称')
+    name = models.CharField(max_length=200, verbose_name='中央厨房送餐点名称')
 
     class Meta:
-        verbose_name = '中央厨房餐点'
-        verbose_name_plural = '中央厨房餐点'
+        verbose_name = '中央厨房送餐点'
+        verbose_name_plural = prioritized_admin_name(verbose_name, 4)
 
     def __str__(self):
         return self.name
@@ -382,7 +394,7 @@ class ProjectPurchaseOrder(models.Model):
 
     class Meta:
         verbose_name = '项目采购清单'
-        verbose_name_plural = '项目采购清单'
+        verbose_name_plural = prioritized_admin_name(verbose_name, 6)
 
     def __str__(self):
         return '%s %s' % (str(self.project), str(self.date))
@@ -406,7 +418,7 @@ class PurchaseOrderSummary(models.Model):
 
     class Meta:
         verbose_name = '采购清单汇总'
-        verbose_name_plural = '采购清单汇总'
+        verbose_name_plural = prioritized_admin_name(verbose_name, 7)
 
     def __str__(self):
         return str(self.date)
