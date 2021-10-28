@@ -189,6 +189,9 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
     ]
     actions = ['duplicate_project', 'generate_weekly_report']
 
+    class Media:
+        css = {"all": ("css/hide_admin_original.css",)}
+
     @admin.action(description='复制所选的项目')
     def duplicate_project(self, request, queryset):
 
