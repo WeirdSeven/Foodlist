@@ -125,21 +125,23 @@ class IngredientAdmin(admin.ModelAdmin):
 #     pass
 
 
-class SDish2StandardIngredientInline(nested_admin.NestedTabularInline):
-    model = SDish2StandardIngredient
-    autocomplete_fields = ['ingredient']
-    extra = 1
+def sdish_inline():
+    class SDish2StandardIngredientInline(nested_admin.NestedTabularInline):
+        model = SDish2StandardIngredient
+        autocomplete_fields = ['ingredient']
+        extra = 1
 
+    class SDish2StandardInline(nested_admin.NestedStackedInline):
+        model = SDish2Standard
+        inlines = [SDish2StandardIngredientInline]
+        extra = 1
 
-class SDish2StandardInline(nested_admin.NestedStackedInline):
-    model = SDish2Standard
-    inlines = [SDish2StandardIngredientInline]
-    extra = 1
+    return SDish2StandardInline
 
 
 @admin.register(SDish)
 class SDishAdmin(nested_admin.NestedModelAdmin):
-    inlines = [SDish2StandardInline]
+    inlines = [sdish_inline()]
 
 
 @admin.register(SDish2Standard)
@@ -155,13 +157,12 @@ class CKProjectLocationAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
 
-class CKProject2SDish2StandardCountInline(nested_admin.NestedTabularInline):
-    autocomplete_fields = ['location']
-    model = CKProject2SDish2StandardCount
-    extra = 1
+def ckproject_inline(meal):
+    class CKProject2SDish2StandardCountInline(nested_admin.NestedTabularInline):
+        autocomplete_fields = ['location']
+        model = CKProject2SDish2StandardCount
+        extra = 0
 
-
-def ckproject2dish2standard_inline(meal):
     class CKProject2SDish2StandardForm(forms.ModelForm):
         class Meta:
             model = CKProject2SDish2Standard
@@ -196,10 +197,7 @@ def ckproject2dish2standard_inline(meal):
 
 @admin.register(CKProject)
 class CKProjectAdmin(nested_admin.NestedModelAdmin):
-    inlines = [
-        ckproject2dish2standard_inline(meal)
-        for meal in Meal
-    ]
+    inlines = [ckproject_inline(meal) for meal in Meal]
     actions = ['duplicate_project', 'generate_weekly_report']
 
     class Media:
@@ -237,14 +235,11 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
             # This save is required for the following m2m copy
             project_copy.save()
 
-            for dish in project.sdish2standards.all():
-                p2d = CKProject2SDish2Standard.objects.get(
-                    project__pk=project.pk,
-                    sdish2standard__pk=dish.pk
-                )
+            p2ds = CKProject2SDish2Standard.objects.filter(project=project)
+            for p2d in p2ds:
                 p2d_copy = CKProject2SDish2Standard(
                     project=project_copy,
-                    sdish2standard=dish,
+                    sdish2standard=p2d.sdish2standard,
                     meal=p2d.meal,
                     course=p2d.course
                 )
@@ -297,7 +292,7 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ['name']
 
 
-def purchase_order_item_inline(model_class, category, extra_item=3, max_item=None):
+def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
     class AutoCompleteSelectWithCategory(AutocompleteSelect):
         def get_url(self):
             url = super().get_url()
@@ -341,7 +336,7 @@ def purchase_order_item_inline(model_class, category, extra_item=3, max_item=Non
 @admin.register(ProjectPurchaseOrder)
 class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
     inlines = [
-        purchase_order_item_inline(ProjectPurchaseOrderItem, category, 2)
+        purchase_order_inline(ProjectPurchaseOrderItem, category, 2)
         for category in IngredientCategory
     ]
     autocomplete_fields = ['project']
@@ -381,7 +376,7 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
 @admin.register(PurchaseOrderSummary)
 class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
     inlines = [
-        purchase_order_item_inline(PurchaseOrderSummaryItem, category, 0, 0)
+        purchase_order_inline(PurchaseOrderSummaryItem, category, 0, 0)
         for category
         in IngredientCategory
     ]
