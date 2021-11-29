@@ -6,7 +6,8 @@ from functools import partial
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 
-from .excelutils import (
+from common.models import SDish2StandardIngredient
+from common.views import (
     auto_set_width,
     is_merged_horizontally,
     range_border_internal,
@@ -16,12 +17,11 @@ from .excelutils import (
     SIDE_MEDIUM,
     SIDE_THIN
 )
-from ..models import (
+from menu.models import (
     CKProject2SDish2Standard,
     CKProject2SDish2StandardCount,
     Course,
-    Meal,
-    SDish2StandardIngredient
+    Meal
 )
 
 weekday_to_name = {1: '周一',

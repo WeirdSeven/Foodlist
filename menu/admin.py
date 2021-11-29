@@ -10,15 +10,15 @@ from django.shortcuts import render
 import nested_admin
 import openpyxl
 
-from models import (
+from common.views import rfc5987_content_disposition
+from menu.models import (
     CKProject,
     CKProjectLocation,
     CKProject2SDish2Standard,
     CKProject2SDish2StandardCount,
     Meal
 )
-from common.views import rfc5987_content_disposition
-from views.ck_reports import generate_ckproject_weekly_report
+from menu.views.ck_reports import generate_ckproject_weekly_report
 
 
 @admin.register(CKProjectLocation)

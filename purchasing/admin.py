@@ -11,14 +11,14 @@ import openpyxl
 
 from common.admin import ProjectAdmin
 from common.models import IngredientCategory, Project
-from models import (
+from common.views import rfc5987_content_disposition
+from purchasing.models import (
     ProjectPurchaseOrder,
     ProjectPurchaseOrderItem,
     PurchaseOrderSummary,
     PurchaseOrderSummaryItem
 )
-from common.views import rfc5987_content_disposition
-from views import download_purchase_order_summary
+from purchasing.views import download_purchase_order_summary
 
 
 def purchase_order_inline(model_class, category, extra_item=3, max_item=None):

@@ -4,7 +4,7 @@ import nested_admin
 import guardian.admin as guardian_admin
 from guardian.shortcuts import get_objects_for_user
 
-from models import Ingredient, Project, SDish, SDish2Standard, SDish2StandardIngredient
+from common.models import Ingredient, Project, SDish, SDish2Standard, SDish2StandardIngredient
 
 
 @admin.register(Ingredient)

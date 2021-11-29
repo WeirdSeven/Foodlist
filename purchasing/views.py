@@ -10,7 +10,7 @@ from common.views import (
     SIDE_THIN
 )
 from common.models import IngredientCategory
-from models import ProjectPurchaseOrder, ProjectPurchaseOrderItem
+from purchasing.models import ProjectPurchaseOrder, ProjectPurchaseOrderItem
 
 
 def generate_summary(wb, items):
