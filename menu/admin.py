@@ -3,11 +3,15 @@ from collections import defaultdict
 
 import django.forms as forms
 from django.contrib import admin, messages
+from django.contrib.admin.views.autocomplete import AutocompleteJsonView
 from django.contrib.admin.widgets import AutocompleteSelect
+from django.contrib.auth.models import Group
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils.http import urlencode
 
+import guardian.admin as guardian_admin
+from guardian.shortcuts import get_objects_for_user
 import nested_admin
 import openpyxl
 
@@ -197,6 +201,7 @@ def ckproject_inline(meal):
 
 @admin.register(CKProject)
 class CKProjectAdmin(nested_admin.NestedModelAdmin):
+    autocomplete_fields = ['project']
     inlines = [ckproject_inline(meal) for meal in Meal]
     actions = ['duplicate_project', 'generate_weekly_report']
 
@@ -288,8 +293,52 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
 
 
 @admin.register(Project)
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(guardian_admin.GuardedModelAdmin):
     search_fields = ['name']
+
+    def has_view_permission(self, request, obj=None):
+        """
+        Returns a boolean indicating whether a user has the view permission of the model.
+
+        Note that here we check both the global view permission and object-level view permission.
+        We add the object-level permission check to make the autocomplete feature work, since
+        AutocompleteJsonView requires has_view_permission to return true so that it does not throw
+        a PermissionDnied exception.
+        """
+        return (
+            request.user.is_active and (
+                super().has_view_permission(request, obj) or
+                self.get_queryset(request).exists()
+            )
+        )
+
+    def has_module_permission(self, request):
+        """
+        Returns a boolean indicating whether a user can see the model on the index page.
+
+        A user can see the model on the index page if it is a superuser, or it has any one of
+        the *global* view|add|change|delete permissions assigned to it. Note that we use the
+        implementation of has_view_permission from the parent class to check the global view
+        permission, since the implementation of the current class checks both the global view
+        permission and the object-level view permission.
+        """
+        return (
+            request.user.is_active and (
+                request.user.is_superuser or
+                super().has_view_permission(request) or
+                self.has_add_permission(request) or
+                self.has_change_permission(request) or
+                self.has_delete_permission(request)
+               )
+        )
+
+    def get_queryset(self, request):
+        return get_objects_for_user(
+            user=request.user,
+            perms='view_project',
+            klass=self.model,
+            accept_global_perms=False
+        )
 
 
 def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
@@ -341,6 +390,9 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
     ]
     autocomplete_fields = ['project']
 
+    class Media:
+        css = {"all": ("css/hide_admin_original.css",)}
+
     @staticmethod
     def find_existing_match(existing_items, item):
         for existing_item in existing_items:
@@ -372,6 +424,15 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         for obj in queryset:
             self.delete_model(request, obj)
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser or self.has_view_permission(request):
+            return qs
+
+        permitted_projects = ProjectAdmin(Project, self.admin_site).get_queryset(request)
+        return qs.filter(project__in=permitted_projects)
+
 
 @admin.register(PurchaseOrderSummary)
 class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
@@ -382,14 +443,8 @@ class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
     ]
     actions = ['download_purchase_order_summary']
 
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
+    class Media:
+        css = {"all": ("css/hide_admin_original.css",)}
 
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         # Recalculate the summary
@@ -407,12 +462,6 @@ class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
                 quantity=quantity
             )
         summary.save()
-
-        # Hide the save-related buttons
-        extra_context = extra_context or {}
-        extra_context['show_save'] = False
-        extra_context['show_save_and_continue'] = False
-        extra_context['show_save_and_add_another'] = False
 
         return super().changeform_view(request, object_id, form_url, extra_context)
 
