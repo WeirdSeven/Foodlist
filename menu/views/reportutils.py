@@ -10,23 +10,16 @@ import unicodedata
 # from ..models import Program, Program2Dish, Dish, Dish2Ingredient, Ingredient
 from . import excel
 
-def report_title(year, month, day, name=None, is_super_program=False):
-	if name:
-		if is_super_program:
-			return '%d年%d月%d日%s大项目' % (year, month, day, name)
-		else:
-			return '%d年%d月%d日%s项目' % (year, month, day, name)
-	else:
-		return '%d年%d月%d日公司' % (year, month, day)
+# def report_title(year, month, day, name=None, is_super_program=False):
+# 	if name:
+# 		if is_super_program:
+# 			return '%d年%d月%d日%s大项目' % (year, month, day, name)
+# 		else:
+# 			return '%d年%d月%d日%s项目' % (year, month, day, name)
+# 	else:
+# 		return '%d年%d月%d日公司' % (year, month, day)
 
-def rfc5987_content_disposition(file_name):
-	ascii_name = unicodedata.normalize('NFKD', file_name).encode('ascii','ignore').decode()
-	header = 'attachment; filename="{}"'.format(ascii_name)
-	if ascii_name != file_name:
-		quoted_name = duhttp.urlquote(file_name)
-		header += '; filename*=UTF-8\'\'{}'.format(quoted_name)
 
-	return header
 
 
 # def get_dish_ingredients(dish):

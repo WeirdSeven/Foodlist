@@ -1,159 +1,24 @@
-import copy
-from collections import defaultdict
+from copy import copy
+from datetime import date
 
 import django.forms as forms
 from django.contrib import admin, messages
-from django.contrib.admin.views.autocomplete import AutocompleteJsonView
-from django.contrib.admin.widgets import AutocompleteSelect
-from django.contrib.auth.models import Group
+
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.utils.http import urlencode
 
-import guardian.admin as guardian_admin
-from guardian.shortcuts import get_objects_for_user
 import nested_admin
 import openpyxl
 
-from .models import *
-from .views.ck_reports import generate_ckproject_weekly_report
-from .views.purchase_order import download_purchase_order_summary
-from .views.reportutils import rfc5987_content_disposition
-
-
-@admin.register(Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
-    exclude = ('ratio',)
-    ordering = ['name']
-    search_fields = ['name']
-    list_display = ['name', 'category', 'price']
-    list_filter = ['category']
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-
-        # Enables autocomplete choices
-        # to pre-filter based on category
-        if 'category' in request.GET:
-            qs = qs.filter(category=request.GET['category'])
-        return qs
-
-
-# class Dish2IngredientInline(admin.TabularInline):
-#     model = Dish2Ingredient
-#     autocomplete_fields = ['ingredient']
-#     extra = 1
-#
-#
-# class DishAdmin(admin.ModelAdmin):
-#     inlines = [Dish2IngredientInline]
-#     search_fields = ['name']
-#
-#
-# class Program2DishInline(admin.TabularInline):
-#     model = Program2Dish
-#     autocomplete_fields = ['dish']
-#     extra = 1
-#
-#
-# class CongeeSoup2IngredientInline(admin.TabularInline):
-#     model = CongeeSoup2Ingredient
-#     autocomplete_fields = ['ingredient']
-#     extra = 1
-#
-#
-# class CongeeSoupAdmin(admin.ModelAdmin):
-#     inlines = [CongeeSoup2IngredientInline]
-#     search_fields = ['name']
-#
-#
-# class Program2CongeeSoupInline(admin.TabularInline):
-#     model = Program2CongeeSoup
-#     autocomplete_fields = ['congeesoup']
-#     extra = 1
-#
-#
-# class StapleAdmin(admin.ModelAdmin):
-#     search_fields = ['name']
-#
-#
-# class Program2StapleInline(admin.TabularInline):
-#     model = Program2Staple
-#     autocomplete_fields = ['staple']
-#     extra = 1
-#
-#
-# class CondimentAdmin(admin.ModelAdmin):
-#     search_fields = ['name']
-#
-#
-# class Program2CondimentInline(admin.TabularInline):
-#     model = Program2Condiment
-#     autocomplete_fields = ['condiment']
-#     extra = 1
-#
-#
-# class OilAdmin(admin.ModelAdmin):
-#     search_fields = ['name']
-#
-#
-# class Program2OilInline(admin.TabularInline):
-#     model = Program2Oil
-#     autocomplete_fields = ['oil']
-#     extra = 1
-#
-#
-# class DisposableAdmin(admin.ModelAdmin):
-#     search_fields = ['name']
-#
-#
-# class Program2DisposableInline(admin.TabularInline):
-#     model = Program2Disposable
-#     autocomplete_fields = ['disposable']
-#     extra = 1
-#
-#
-# class ProgramAdmin(admin.ModelAdmin):
-#     fields = ('name', 'superprogram', 'date', ('condiments_price', 'condiments_bool'))
-#     inlines = [
-#         Program2DishInline,
-#         Program2CongeeSoupInline,
-#         Program2StapleInline,
-#         Program2CondimentInline,
-#         Program2OilInline,
-#         Program2DisposableInline,
-#     ]
-#
-#
-# class SuperProgramAdmin(admin.ModelAdmin):
-#     pass
-
-
-def sdish_inline():
-    class SDish2StandardIngredientInline(nested_admin.NestedTabularInline):
-        model = SDish2StandardIngredient
-        autocomplete_fields = ['ingredient']
-        extra = 1
-
-    class SDish2StandardInline(nested_admin.NestedStackedInline):
-        model = SDish2Standard
-        inlines = [SDish2StandardIngredientInline]
-        extra = 1
-
-    return SDish2StandardInline
-
-
-@admin.register(SDish)
-class SDishAdmin(nested_admin.NestedModelAdmin):
-    inlines = [sdish_inline()]
-
-
-@admin.register(SDish2Standard)
-class SDish2StandardAdmin(admin.ModelAdmin):
-    search_fields = ['dish__name', 'standard']
-
-    def has_module_permission(self, request):
-        return False
+from models import (
+    CKProject,
+    CKProjectLocation,
+    CKProject2SDish2Standard,
+    CKProject2SDish2StandardCount,
+    Meal
+)
+from common.views import rfc5987_content_disposition
+from views.ck_reports import generate_ckproject_weekly_report
 
 
 @admin.register(CKProjectLocation)
@@ -232,10 +97,10 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
             })
 
         for index, project in enumerate(queryset):
-            project_copy = copy.copy(project)
+            project_copy = copy(project)
             project_copy.pk = None
             form_date_key = 'form-' + str(index) + '-date'
-            project_copy.date = request.POST.get(form_date_key, datetime.date.today())
+            project_copy.date = request.POST.get(form_date_key, date.today())
 
             # This save is required for the following m2m copy
             project_copy.save()
@@ -288,194 +153,5 @@ class CKProjectAdmin(nested_admin.NestedModelAdmin):
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         filename = '%s菜单计划量%d月%d日.xlsx' % (project_names[0], dates[0].month, dates[0].day)
-        response['Content-Disposition'] = rfc5987_content_disposition(filename)
-        return response
-
-
-@admin.register(Project)
-class ProjectAdmin(guardian_admin.GuardedModelAdmin):
-    search_fields = ['name']
-
-    def has_view_permission(self, request, obj=None):
-        """
-        Returns a boolean indicating whether a user has the view permission of the model.
-
-        Note that here we check both the global view permission and object-level view permission.
-        We add the object-level permission check to make the autocomplete feature work, since
-        AutocompleteJsonView requires has_view_permission to return true so that it does not throw
-        a PermissionDnied exception.
-        """
-        return (
-            request.user.is_active and (
-                super().has_view_permission(request, obj) or
-                self.get_queryset(request).exists()
-            )
-        )
-
-    def has_module_permission(self, request):
-        """
-        Returns a boolean indicating whether a user can see the model on the index page.
-
-        A user can see the model on the index page if it is a superuser, or it has any one of
-        the *global* view|add|change|delete permissions assigned to it. Note that we use the
-        implementation of has_view_permission from the parent class to check the global view
-        permission, since the implementation of the current class checks both the global view
-        permission and the object-level view permission.
-        """
-        return (
-            request.user.is_active and (
-                request.user.is_superuser or
-                super().has_view_permission(request) or
-                self.has_add_permission(request) or
-                self.has_change_permission(request) or
-                self.has_delete_permission(request)
-               )
-        )
-
-    def get_queryset(self, request):
-        return get_objects_for_user(
-            user=request.user,
-            perms='view_project',
-            klass=self.model,
-            accept_global_perms=False
-        )
-
-
-def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
-    class AutoCompleteSelectWithCategory(AutocompleteSelect):
-        def get_url(self):
-            url = super().get_url()
-            url += '?' + urlencode({
-                'category': category.value
-            })
-            return url
-
-    class ProjectPurchaseOrderItemForm(forms.ModelForm):
-        class Meta:
-            fields = '__all__'
-            widgets = {
-                'ingredient': AutoCompleteSelectWithCategory(
-                    ProjectPurchaseOrderItem._meta.get_field('ingredient'),
-                    admin.site
-                )
-            }
-
-    class ProjectPurchaseOrderItemInline(admin.TabularInline):
-        model = model_class
-        form = ProjectPurchaseOrderItemForm
-        verbose_name = category.label
-        verbose_name_plural = category.label
-        extra = extra_item
-        max_num = max_item
-        autocomplete_fields = ['ingredient']
-
-        def get_queryset(self, request):
-            return super().get_queryset(request).filter(
-                ingredient__category=category
-            )
-
-        def formfield_for_foreignkey(self, db_field, request, **kwargs):
-            if db_field.name == "ingredient":
-                kwargs["queryset"] = Ingredient.objects.filter(category=category)
-            return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    return ProjectPurchaseOrderItemInline
-
-
-@admin.register(ProjectPurchaseOrder)
-class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
-    inlines = [
-        purchase_order_inline(ProjectPurchaseOrderItem, category, 2)
-        for category in IngredientCategory
-    ]
-    autocomplete_fields = ['project']
-
-    class Media:
-        css = {"all": ("css/hide_admin_original.css",)}
-
-    @staticmethod
-    def find_existing_match(existing_items, item):
-        for existing_item in existing_items:
-            if item.ingredient == existing_item.ingredient:
-                return existing_item
-        return None
-
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-
-        try:
-            PurchaseOrderSummary.objects.get(date=obj.date)
-        except PurchaseOrderSummary.DoesNotExist:
-            PurchaseOrderSummary.objects.create(date=obj.date)
-
-    def delete_model(self, request, obj):
-        date = copy.copy(obj.date)
-        super().delete_model(request, obj)
-
-        orders = ProjectPurchaseOrder.objects.filter(date=date)
-        if len(orders) == 0:
-            try:
-                summary = PurchaseOrderSummary.objects.get(date=date)
-                summary.delete()
-            except PurchaseOrderSummary.DoesNotExist:
-                pass
-
-    def delete_queryset(self, request, queryset):
-        for obj in queryset:
-            self.delete_model(request, obj)
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-
-        if request.user.is_superuser or self.has_view_permission(request):
-            return qs
-
-        permitted_projects = ProjectAdmin(Project, self.admin_site).get_queryset(request)
-        return qs.filter(project__in=permitted_projects)
-
-
-@admin.register(PurchaseOrderSummary)
-class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
-    inlines = [
-        purchase_order_inline(PurchaseOrderSummaryItem, category, 0, 0)
-        for category
-        in IngredientCategory
-    ]
-    actions = ['download_purchase_order_summary']
-
-    class Media:
-        css = {"all": ("css/hide_admin_original.css",)}
-
-    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
-        # Recalculate the summary
-        summary = PurchaseOrderSummary.objects.get(id=object_id)
-        PurchaseOrderSummaryItem.objects.filter(summary=summary).delete()
-
-        items = ProjectPurchaseOrderItem.objects.filter(order__date=summary.date)
-        ingredient_quantities = defaultdict(float)
-        for item in items:
-            ingredient_quantities[item.ingredient] += item.quantity
-        for ingredient, quantity in ingredient_quantities.items():
-            PurchaseOrderSummaryItem.objects.create(
-                summary=summary,
-                ingredient=ingredient,
-                quantity=quantity
-            )
-        summary.save()
-
-        return super().changeform_view(request, object_id, form_url, extra_context)
-
-    @admin.action(description='下载采购清单汇总')
-    def download_purchase_order_summary(self, request, queryset):
-        if len(queryset) > 1:
-            self.message_user(request, '只能选择一个日期', level=messages.ERROR)
-
-        date = queryset[0].date
-        wb = download_purchase_order_summary(date)
-        response = HttpResponse(
-            content=openpyxl.writer.excel.save_virtual_workbook(wb),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        filename = '采购清单%d月%d日.xlsx' % (date.month, date.day)
         response['Content-Disposition'] = rfc5987_content_disposition(filename)
         return response
