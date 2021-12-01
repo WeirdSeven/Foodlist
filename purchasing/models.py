@@ -18,7 +18,7 @@ class ProjectPurchaseOrder(models.Model):
 
 
 class ProjectPurchaseOrderItem(models.Model):
-    order = models.ForeignKey(ProjectPurchaseOrder, models.CASCADE)
+    order = models.ForeignKey(ProjectPurchaseOrder, models.CASCADE, related_name='items')
     ingredient = models.ForeignKey(Ingredient, models.SET_NULL, null=True, verbose_name='原材料')
     quantity = models.FloatField(verbose_name='数量')
 

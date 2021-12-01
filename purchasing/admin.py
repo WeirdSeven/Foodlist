@@ -1,10 +1,12 @@
 from collections import defaultdict
 from copy import copy
+from datetime import date
 
 from django.contrib import admin, messages
 from django.contrib.admin.widgets import AutocompleteSelect
-from django.forms import ModelForm
+from django.forms import formset_factory, DateField, Form, ModelForm
 from django.http import HttpResponse
+from django.shortcuts import render
 from django.utils.http import urlencode
 
 import openpyxl
@@ -54,11 +56,6 @@ def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
                 ingredient__category=category
             )
 
-        # def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        #     if db_field.name == "ingredient":
-        #         kwargs["queryset"] = Ingredient.objects.filter(category=category)
-        #     return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
     return ProjectPurchaseOrderItemInline
 
 
@@ -69,6 +66,7 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         for category in IngredientCategory
     ]
     autocomplete_fields = ['project']
+    actions = ['duplicate_project_purchase_order']
 
     class Media:
         css = {"all": ("css/hide_admin_original.css",)}
@@ -104,6 +102,11 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         for obj in queryset:
             self.delete_model(request, obj)
 
+    def has_view_permission(self, request, obj=None):
+        opts = self.opts
+        codename = '%s_%s' % ('view', opts.model_name)
+        return request.user.has_perm('%s.%s' % (opts.app_label, codename))
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
 
@@ -112,6 +115,46 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
 
         permitted_projects = ProjectAdmin(Project, self.admin_site).get_queryset(request)
         return qs.filter(project__in=permitted_projects)
+
+    @admin.action(description='复制所选的项目采购清单')
+    def duplicate_project_purchase_order(self, request, queryset):
+
+        queryset = queryset.order_by('project__name', 'date')
+
+        class ProjectPurchaseOrderDateForm(Form):
+            date = DateField(
+                label='更改后日期',
+                widget=admin.widgets.AdminDateWidget()
+            )
+
+        if not request.POST.get('post'):
+            return render(request, 'purchasing/purchase_order_duplicate_date.html', {
+                'queryset': queryset,
+                'formset': formset_factory(ProjectPurchaseOrderDateForm, extra=queryset.count())(),
+                'title': '选择日期',
+                # For styles
+                **self.admin_site.each_context(request),
+                'opts': self.model._meta,
+                'media': self.media
+            })
+
+        for index, order in enumerate(queryset):
+            order_copy = ProjectPurchaseOrder(
+                project=order.project,
+                date=request.POST.get(f'form-{index}-date', date.today())
+            )
+
+            # This save is required for the following m2m copy
+            order_copy.save()
+
+            for item in order.items.all():
+                ProjectPurchaseOrderItem.objects.create(
+                    order=order_copy,
+                    ingredient=item.ingredient,
+                    quantity=item.quantity
+                )
+
+            order_copy.save()
 
 
 @admin.register(PurchaseOrderSummary)
@@ -127,7 +170,6 @@ class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
         css = {"all": ("css/hide_admin_original.css",)}
 
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
-        # Recalculate the summary
         summary = PurchaseOrderSummary.objects.get(id=object_id)
         PurchaseOrderSummaryItem.objects.filter(summary=summary).delete()
 

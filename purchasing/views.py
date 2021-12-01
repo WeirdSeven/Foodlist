@@ -65,7 +65,6 @@ def generate_summary(wb, items):
             sheet.cell(row=category_start_row, column=column_category).value = category.label
 
             item_row = category_start_row
-            print(ingredient_quantities)
             for ingredient, quantity in ingredient_quantities.items():
                 sheet.cell(row=item_row, column=column_name).value = ingredient.name
                 sheet.cell(row=item_row, column=column_quantity).value = quantity
