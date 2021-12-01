@@ -42,13 +42,16 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # custom apps below
-    'menu.apps.MenuConfig',
-
     # plug-ins
     'nested_admin',
     'multiforloop',
     'guardian',
+
+    # custom apps below
+    'accounts',
+    'common',
+    # 'menu',
+    'purchasing',
 ]
 
 MIDDLEWARE = [
@@ -157,4 +160,4 @@ STATICFILES_DIRS = [
 
 # This is a new requirement from Django 3.2
 # See https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+# DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
