@@ -98,6 +98,11 @@ AUTHENTICATION_BACKENDS = [
     'guardian.backends.ObjectPermissionBackend',
 ]
 
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
+PHONENUMBER_DEFAULT_REGION = 'CN'
+
+
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
 
