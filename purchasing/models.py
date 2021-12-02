@@ -2,7 +2,7 @@ from datetime import date
 
 from django.db import models
 
-from common.models import prioritized_admin_name, Ingredient, Project
+from common.models import Ingredient, Project
 
 
 class ProjectPurchaseOrder(models.Model):
@@ -11,7 +11,7 @@ class ProjectPurchaseOrder(models.Model):
 
     class Meta:
         verbose_name = '项目采购清单'
-        verbose_name_plural = prioritized_admin_name(verbose_name, 6)
+        verbose_name_plural = '项目采购清单'
 
     def __str__(self):
         return '%s %s' % (str(self.project), str(self.date))
@@ -35,7 +35,7 @@ class PurchaseOrderSummary(models.Model):
 
     class Meta:
         verbose_name = '采购清单汇总'
-        verbose_name_plural = prioritized_admin_name(verbose_name, 7)
+        verbose_name_plural = '采购清单汇总'
 
     def __str__(self):
         return str(self.date)

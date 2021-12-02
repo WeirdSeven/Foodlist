@@ -61,6 +61,7 @@ def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
 
 @admin.register(ProjectPurchaseOrder)
 class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
+    admin_priority = 1
     inlines = [
         purchase_order_inline(ProjectPurchaseOrderItem, category, 2)
         for category in IngredientCategory
@@ -159,6 +160,7 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
 
 @admin.register(PurchaseOrderSummary)
 class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
+    admin_priority = 2
     inlines = [
         purchase_order_inline(PurchaseOrderSummaryItem, category, 0, 0)
         for category

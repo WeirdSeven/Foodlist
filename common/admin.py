@@ -9,6 +9,7 @@ from common.models import Ingredient, Project, SDish, SDish2Standard, SDish2Stan
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
+    admin_priority = 1
     exclude = ('ratio',)
     ordering = ['name']
     search_fields = ['name']
@@ -41,6 +42,7 @@ def sdish_inline():
 
 @admin.register(SDish)
 class SDishAdmin(nested_admin.NestedModelAdmin):
+    admin_priority = 3
     inlines = [sdish_inline()]
 
 
@@ -54,6 +56,7 @@ class SDish2StandardAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(guardian_admin.GuardedModelAdmin):
+    admin_priority = 2
     search_fields = ['name']
 
     def has_view_permission(self, request, obj=None):

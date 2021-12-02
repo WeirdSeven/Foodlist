@@ -161,3 +161,43 @@ STATICFILES_DIRS = [
 # This is a new requirement from Django 3.2
 # See https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
 # DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+
+# App and model ordering
+# TODO: Refactor this function as a method of a subclass of SiteAdmin
+# See: https://stackoverflow.com/questions/4877335/how-to-use-custom-adminsite-class
+
+def get_app_list(self, request):
+    from django.apps import apps
+    from django.contrib.admin.sites import site
+
+    app_dict = self._build_app_dict(request)
+
+    # Sort the apps by admin_priority of apps.
+    app_priority = {
+        app['app_label']: getattr(
+            apps.get_app_config(app['app_label']),
+            'admin_priority',
+            10  # The 'auth' app will use this default
+        )
+        for app in app_dict.values()
+    }
+    app_list = sorted(app_dict.values(), key=lambda x: app_priority[x['app_label']])
+
+    # Sort the models by admin_priority within each app.
+    for app in app_list:
+        model_priority = {
+            model['object_name']: getattr(
+                site._registry[apps.get_model(app['app_label'], model['object_name'])],
+                'admin_priority',
+                10
+            )
+            for model in app['models']
+        }
+        app['models'].sort(key=lambda x: model_priority[x['object_name']])
+
+    return app_list
+
+
+from django.contrib import admin
+admin.AdminSite.get_app_list = get_app_list

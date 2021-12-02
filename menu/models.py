@@ -3,7 +3,7 @@ from datetime import date
 
 from django.db import models
 
-from common.models import prioritized_admin_name, Ingredient, Project, SDish2Standard
+from common.models import Project, SDish2Standard
 
 
 class Meal(models.TextChoices):
@@ -37,7 +37,7 @@ class CKProject(models.Model):
 
     class Meta:
         verbose_name = '中央厨房菜单'
-        verbose_name_plural = prioritized_admin_name(verbose_name, 5)
+        verbose_name_plural = '中央厨房菜单'
 
     def __str__(self):
         return f'{self.project} {self.date}'
@@ -82,7 +82,7 @@ class CKProjectLocation(models.Model):
 
     class Meta:
         verbose_name = '中央厨房送餐点'
-        verbose_name_plural = prioritized_admin_name(verbose_name, 4)
+        verbose_name_plural = '中央厨房送餐点'
 
     def __str__(self):
         return self.name

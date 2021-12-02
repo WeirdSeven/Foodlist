@@ -1,18 +1,6 @@
 from django.db import models
 
 
-def prioritized_admin_name(verbose_name, priority):
-    """
-    This is quite hacky. It returns the verbose name
-    prefixed with a number of spaces. More spaces
-    means higher priority.
-    :param verbose_name: The model name to display
-    :param priority: An int less than 100 (can be negative)
-    :return: prioritized name
-    """
-    return ' ' * (100 - priority) + verbose_name
-
-
 # Ingredient
 
 class IngredientCategory(models.TextChoices):
@@ -36,7 +24,7 @@ class Ingredient(models.Model):
 
     class Meta:
         verbose_name = '原材料'
-        verbose_name_plural = prioritized_admin_name(verbose_name, 1)
+        verbose_name_plural = '原材料'
 
     def __str__(self):
         return self.name
@@ -59,7 +47,7 @@ class Project(models.Model):
 
     class Meta:
         verbose_name = '项目'
-        verbose_name_plural = prioritized_admin_name(verbose_name, 3)
+        verbose_name_plural = '项目'
 
     def __str__(self):
         return self.name
@@ -72,7 +60,7 @@ class SDish(models.Model):
 
     class Meta:
         verbose_name = '菜品'
-        verbose_name_plural = prioritized_admin_name(verbose_name, 2)
+        verbose_name_plural = '菜品'
 
     def __str__(self):
         return self.name
