@@ -13,4 +13,4 @@ psycopg2==2.9.2
 python-monkey-business==1.0.0
 pytz==2021.1
 six==1.16.0
-sqlparse==0.4.1
+sqlparse==0.4.2
