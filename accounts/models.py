@@ -7,6 +7,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 class CustomUser(AbstractUser):
     phone_number = PhoneNumberField(null=False, blank=False, unique=True, verbose_name='联系电话')
 
+    REQUIRED_FIELDS = ['phone_number']
+
     @display(description='姓名')
     def get_full_name(self):
         """
