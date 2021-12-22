@@ -4,7 +4,14 @@ import nested_admin
 import guardian.admin as guardian_admin
 from guardian.shortcuts import get_objects_for_user
 
-from common.models import Ingredient, Project, SDish, SDish2Standard, SDish2StandardIngredient
+from common.models import (
+    Ingredient,
+    IngredientUnit,
+    Project,
+    SDish,
+    SDish2Standard,
+    SDish2StandardIngredient
+)
 
 
 @admin.register(Ingredient)
@@ -13,8 +20,10 @@ class IngredientAdmin(admin.ModelAdmin):
     exclude = ('ratio',)
     ordering = ['name']
     search_fields = ['name']
-    list_display = ['name', 'category', 'price']
+    list_display = ['name', 'category', 'specification', 'price_per_unit']
     list_filter = ['category']
+
+
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

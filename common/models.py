@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.db import models
 
 
@@ -45,8 +46,25 @@ class Ingredient(models.Model):
         verbose_name = '原材料'
         verbose_name_plural = '原材料'
 
+    @staticmethod
+    def format_without_zero(f):
+        if f.is_integer():
+            return int(f)
+        else:
+            return f
+
+    @admin.display(description='单价')
+    def price_per_unit(self):
+        return f'{self.format_without_zero(self.price)}元/{IngredientUnit(self.unit).label}'
+
+    def specification_paretheses(self):
+        if self.specification:
+            return f'（{self.specification}）'
+        else:
+            return ' '
+
     def __str__(self):
-        return self.name
+        return f'{self.name}{self.specification_paretheses()}{self.price_per_unit()}'
 
 
 # Project
