@@ -20,7 +20,7 @@ from purchasing.models import (
     PurchaseOrderSummary,
     PurchaseOrderSummaryItem
 )
-from purchasing.views import download_purchase_order_summary
+from purchasing.views import download_project_purchase_order, download_purchase_order_summary
 
 
 def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
@@ -67,7 +67,7 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         for category in IngredientCategory
     ]
     autocomplete_fields = ['project']
-    actions = ['duplicate_project_purchase_order']
+    actions = ['duplicate_project_purchase_order', 'download_project_purchase_order']
 
     class Media:
         css = {"all": ("css/hide_admin_original.css",)}
@@ -162,6 +162,21 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
                 )
 
             order_copy.save()
+
+    @admin.action(description='下载所选的项目采购清单')
+    def download_project_purchase_order(self, request, queryset):
+        if len(queryset) > 1:
+            self.message_user(request, '只能选择一个采购清单', level=messages.ERROR)
+
+        order = queryset[0]
+        wb = download_project_purchase_order(order)
+        response = HttpResponse(
+            content=openpyxl.writer.excel.save_virtual_workbook(wb),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f'项目采购清单 {order}.xlsx'
+        response['Content-Disposition'] = rfc5987_content_disposition(filename)
+        return response
 
 
 @admin.register(PurchaseOrderSummary)

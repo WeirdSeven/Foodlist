@@ -151,6 +151,15 @@ def generate_project_purchase_order(wb, order, items):
     set_alignment(sheet, Alignment(horizontal='center', vertical="center"))
 
 
+def download_project_purchase_order(order):
+    wb = Workbook()
+    del wb['Sheet']
+
+    items = ProjectPurchaseOrderItem.objects.filter(order=order)
+    generate_project_purchase_order(wb, order, items)
+    return wb
+
+
 def generate_project_purchase_orders(wb, date, items):
     orders = ProjectPurchaseOrder.objects.filter(date=date)
     for order in orders:
