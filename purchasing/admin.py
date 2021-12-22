@@ -109,6 +109,12 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         return request.user.has_perm('%s.%s' % (opts.app_label, codename))
 
     def get_queryset(self, request):
+        """
+        If a user has global view permission for ProjectPurchaseOrder, they can see
+        all purchase orders of all projects.
+        If a user does not have global view permission for ProjectPurchaseOrder, they
+        can only see purchase orders of projects for which they have the view permission.
+        """
         qs = super().get_queryset(request)
 
         if request.user.is_superuser or self.has_view_permission(request):
