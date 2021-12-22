@@ -4,11 +4,23 @@ from django.db import models
 # Ingredient
 
 class IngredientCategory(models.TextChoices):
-    VEGETABLE = 'VG', '蔬菜'
+    VEGETABLE = 'VG', '蔬果'
     MEAT = 'MT', '肉类'
+    TOFU = 'TF', '豆制品'
     CONDIMENT = 'CND', '调料'
+    DRY = 'DRY', '干货'
     RICE_NOODLE_OIL = 'RNO', '米面油'
     DISPOSABLE = 'DSP', '低值易耗'
+
+
+class IngredientUnit(models.TextChoices):
+    JIN = 'JN', '斤'
+    KILOGRAM = 'KG', '公斤'
+    BOTTLE = 'BT', '瓶'
+    BUCKET = 'BK', '桶'
+    BOX = 'BX', '箱'
+    SACK = 'SK', '袋'
+    BAG = 'BG', '包'
 
 
 class Ingredient(models.Model):
@@ -19,8 +31,15 @@ class Ingredient(models.Model):
         default=IngredientCategory.VEGETABLE,
         verbose_name='原材料分类'
     )
+    specification = models.CharField(max_length=200, blank=True, verbose_name='规格')
     ratio = models.FloatField(default=1, verbose_name='转化率')
-    price = models.FloatField(verbose_name='单价(元/斤或个)')
+    price = models.FloatField(verbose_name='单价')
+    unit = models.CharField(
+        max_length=2,
+        choices=IngredientUnit.choices,
+        default=IngredientUnit.JIN,
+        verbose_name='单位'
+    )
 
     class Meta:
         verbose_name = '原材料'
