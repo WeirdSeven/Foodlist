@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'common',
     # 'menu',
     'purchasing',
+    'session_security',
 ]
 
 MIDDLEWARE = [
@@ -77,6 +78,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'session_security.middleware.SessionSecurityMiddleware',
 ]
 
 ROOT_URLCONF = 'Foodlist.urls'
@@ -142,6 +144,13 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+
+# Session management
+SESSION_SECURITY_WARN_AFTER = 540
+SESSION_SECURITY_EXPIRE_AFTER = 600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/

@@ -22,6 +22,7 @@ urlpatterns = [
 	# path('', views.index),
 	# path('admin/jsi18n', JavaScriptCatalog.as_view(), name='jsi18n'),
 	path('', admin.site.urls, name='admin'),
+	path('session_security/', include('session_security.urls')),
 	# path('menu/', include('menu.urls')),
 ]
 

@@ -5,6 +5,7 @@ django-guardian==2.4.0
 django-multiforloop==0.3.1
 django-nested-admin==3.3.3
 django-phonenumber-field==6.0.0
+django-session-security==2.6.6
 et-xmlfile==1.0.1
 jdcal==1.4.1
 openpyxl==3.0.9
