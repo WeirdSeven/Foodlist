@@ -1,5 +1,5 @@
 asgiref==3.4.1
-Django==3.2.7
+Django==3.2.10
 django-admin-sortable2==1.0.2
 django-guardian==2.4.0
 django-multiforloop==0.3.1
