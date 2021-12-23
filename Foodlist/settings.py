@@ -43,7 +43,6 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == "True"
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
-    '139.162.114.242',
     'delaiqi.biz',
 ]
 
