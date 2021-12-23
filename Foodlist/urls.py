@@ -25,6 +25,6 @@ urlpatterns = [
 	# path('menu/', include('menu.urls')),
 ]
 
-admin.site.site_header = '得来奇管理系统'
-admin.site.index_title = '数据库管理'
-admin.site.site_title = '得来奇管理系统'
+admin.site.site_header = '食品管理系统'
+admin.site.index_title = '站点管理'
+admin.site.site_title = '食品管理系统'
