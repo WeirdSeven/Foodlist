@@ -6,7 +6,6 @@ from guardian.shortcuts import get_objects_for_user
 
 from common.models import (
     Ingredient,
-    IngredientUnit,
     Project,
     SDish,
     SDish2Standard,
@@ -22,8 +21,6 @@ class IngredientAdmin(admin.ModelAdmin):
     search_fields = ['name']
     list_display = ['name', 'category', 'specification', 'price_per_unit']
     list_filter = ['category']
-
-
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
