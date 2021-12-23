@@ -1,0 +1,7 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block welcome-msg %}
+    {% translate 'Welcome,' %}
+    <strong>{% firstof user.get_full_name user.get_username %}</strong>.
+{% endblock %}
