@@ -66,9 +66,9 @@ def generate_summary(wb, items):
 
             item_row = category_start_row
             for ingredient, quantity in ingredient_quantities.items():
-                sheet.cell(row=item_row, column=column_name).value = ingredient.name
+                sheet.cell(row=item_row, column=column_name).value = ingredient.name_and_spec
                 sheet.cell(row=item_row, column=column_quantity).value = quantity
-                sheet.cell(row=item_row, column=column_unit_cost).value = ingredient.price
+                sheet.cell(row=item_row, column=column_unit_cost).value = ingredient.price_per_unit
                 total_cost = ingredient.price * quantity
                 sheet.cell(row=item_row, column=column_total_cost).value = total_cost
                 item_row += 1
@@ -94,11 +94,15 @@ def generate_project_purchase_order(wb, order, items):
     column_category = 1
     column_name = 2
     column_quantity = 3
+    column_unit_cost = 4
+    column_total_cost = 5
 
     header_row = 1
     sheet.cell(row=header_row, column=column_category).value = '类别'
     sheet.cell(row=header_row, column=column_name).value = '品名'
     sheet.cell(row=header_row, column=column_quantity).value = '数量'
+    sheet.cell(row=header_row, column=column_unit_cost).value = '单价'
+    sheet.cell(row=header_row, column=column_total_cost).value = '总价'
     sheet.row_dimensions[header_row].height = 30
 
     category_start_row = header_row + 2
@@ -112,7 +116,7 @@ def generate_project_purchase_order(wb, order, items):
                 start_row=category_start_row,
                 start_column=column_name,
                 end_row=category_start_row,
-                end_column=column_quantity
+                end_column=column_total_cost
             )
             sheet.cell(row=category_start_row, column=column_name).value = '无'
 
@@ -120,7 +124,7 @@ def generate_project_purchase_order(wb, order, items):
                 min_row=category_start_row,
                 min_col=column_category,
                 max_row=category_start_row,
-                max_col=column_quantity
+                max_col=column_total_cost
             ), SIDE_THIN, SIDE_THIN)
         else:
             sheet.merge_cells(
@@ -133,15 +137,21 @@ def generate_project_purchase_order(wb, order, items):
 
             item_row = category_start_row
             for item in items_by_category:
-                sheet.cell(row=item_row, column=column_name).value = item.ingredient.name
+                sheet.cell(row=item_row, column=column_name).value = item.ingredient.name_and_spec
                 sheet.cell(row=item_row, column=column_quantity).value = item.quantity
+                sheet.cell(
+                    row=item_row,
+                    column=column_unit_cost
+                ).value = item.ingredient.price_per_unit
+                total_cost = item.ingredient.price * item.quantity
+                sheet.cell(row=item_row, column=column_total_cost).value = total_cost
                 item_row += 1
 
             range_border_internal(sheet.iter_rows(
                 min_row=category_start_row,
                 min_col=column_category,
                 max_row=category_start_row + num_items - 1,
-                max_col=column_quantity
+                max_col=column_total_cost
             ), SIDE_THIN, SIDE_THIN)
 
         # There is still a row if num_items == 0

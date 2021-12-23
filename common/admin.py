@@ -19,7 +19,7 @@ class IngredientAdmin(admin.ModelAdmin):
     exclude = ('ratio',)
     ordering = ['name']
     search_fields = ['name']
-    list_display = ['name', 'category', 'specification', 'price_per_unit']
+    list_display = ['name_and_spec', 'price_per_unit', 'category']
     list_filter = ['category']
 
     def get_queryset(self, request):

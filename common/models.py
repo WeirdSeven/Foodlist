@@ -30,7 +30,7 @@ class Ingredient(models.Model):
         max_length=3,
         choices=IngredientCategory.choices,
         default=IngredientCategory.VEGETABLE,
-        verbose_name='原材料分类'
+        verbose_name='分类'
     )
     specification = models.CharField(max_length=200, blank=True, verbose_name='规格')
     ratio = models.FloatField(default=1, verbose_name='转化率')
@@ -46,25 +46,32 @@ class Ingredient(models.Model):
         verbose_name = '原材料'
         verbose_name_plural = '原材料'
 
-    @staticmethod
-    def format_without_zero(f):
-        if f.is_integer():
-            return int(f)
-        else:
-            return f
+    @property
+    @admin.display(description='品名')
+    def name_and_spec(self):
 
+        def specification_paretheses():
+            if self.specification:
+                return f'（{self.specification}）'
+            else:
+                return ' '
+
+        return f'{self.name}{specification_paretheses()}'
+
+    @property
     @admin.display(description='单价')
     def price_per_unit(self):
-        return f'{self.format_without_zero(self.price)}元/{IngredientUnit(self.unit).label}'
 
-    def specification_paretheses(self):
-        if self.specification:
-            return f'（{self.specification}）'
-        else:
-            return ' '
+        def format_without_zero(f):
+            if f.is_integer():
+                return int(f)
+            else:
+                return f
+
+        return f'{format_without_zero(self.price)}元/{IngredientUnit(self.unit).label}'
 
     def __str__(self):
-        return f'{self.name}{self.specification_paretheses()}{self.price_per_unit()}'
+        return f'{self.name_and_spec}{self.price_per_unit}'
 
 
 # Project

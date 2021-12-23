@@ -215,12 +215,12 @@ class PurchaseOrderSummaryAdmin(admin.ModelAdmin):
         if len(queryset) > 1:
             self.message_user(request, '只能选择一个日期', level=messages.ERROR)
 
-        date = queryset[0].date
-        wb = download_purchase_order_summary(date)
+        summary_date = queryset[0].date
+        wb = download_purchase_order_summary(summary_date)
         response = HttpResponse(
             content=openpyxl.writer.excel.save_virtual_workbook(wb),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        filename = '采购清单%d月%d日.xlsx' % (date.month, date.day)
+        filename = f'采购清单汇总 {summary_date}.xlsx'
         response['Content-Disposition'] = rfc5987_content_disposition(filename)
         return response
