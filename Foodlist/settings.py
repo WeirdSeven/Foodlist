@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'accounts',
     'common',
     # 'menu',
+    'inventory',
     'purchasing',
     'session_security',
 ]
