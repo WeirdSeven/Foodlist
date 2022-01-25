@@ -139,3 +139,14 @@ class SDish2StandardIngredient(models.Model):
 
     def __str__(self):
         return f'{self.sdish2standard} {self.ingredient}'
+
+
+# Requests
+
+class RequestStatus(models.TextChoices):
+    EDITING = 'EDT', '编辑中'
+    SUBMITTED = 'SBM', '已提交'
+    APPROVED = 'APR', '️️通过'
+    REJECTED = 'REJ', '未通过'
+    REEDITING = 'RED', '重新编辑中'
+    RESUBMITTED = 'RSB', '已重新提交'

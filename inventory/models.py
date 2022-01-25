@@ -3,25 +3,16 @@ from datetime import date
 from django.contrib import admin
 from django.db import models
 
-from common.models import Ingredient, Project
+from common.models import Ingredient, Project, RequestStatus
 
 
-class ApprovalStatus(models.TextChoices):
-    EDITING = 'EDT', '编辑中'
-    SUBMITTED = 'SBM', '已提交'
-    APPROVED = 'APR', '️️通过'
-    REJECTED = 'REJ', '未通过'
-    REEDITING = 'RED', '重新编辑中'
-    RESUBMITTED = 'RSB', '已重新提交'
-
-
-emoji_for_approval_status = {
-    ApprovalStatus.EDITING: '🕒',
-    ApprovalStatus.SUBMITTED: '🈸',
-    ApprovalStatus.APPROVED: '🟢',
-    ApprovalStatus.REJECTED: '🔴',
-    ApprovalStatus.REEDITING: '🈸',
-    ApprovalStatus.RESUBMITTED: '🕒',
+emoji_for_request_status = {
+    RequestStatus.EDITING: '🕒',
+    RequestStatus.SUBMITTED: '🈸',
+    RequestStatus.APPROVED: '🟢',
+    RequestStatus.REJECTED: '🔴',
+    RequestStatus.REEDITING: '🈸',
+    RequestStatus.RESUBMITTED: '🕒',
 }
 
 
@@ -31,8 +22,8 @@ class InventoryInList(models.Model):
     comments = models.TextField(verbose_name='评论')
     status = models.CharField(
         max_length=3,
-        choices=ApprovalStatus.choices,
-        default=ApprovalStatus.EDITING,
+        choices=RequestStatus.choices,
+        default=RequestStatus.EDITING,
         verbose_name='状态'
     )
 
@@ -43,8 +34,8 @@ class InventoryInList(models.Model):
 
     @admin.display(description='状态')
     def emoji_and_status(self):
-        status = ApprovalStatus(self.status)
-        return f'{emoji_for_approval_status[status]} {status.label}'
+        status = RequestStatus(self.status)
+        return f'{emoji_for_request_status[status]} {status.label}'
 
     def __str__(self):
         return f'{self.project} {self.date}'
@@ -65,8 +56,8 @@ class InventoryOutList(models.Model):
     comments = models.TextField(verbose_name='评论')
     status = models.CharField(
         max_length=3,
-        choices=ApprovalStatus.choices,
-        default=ApprovalStatus.EDITING,
+        choices=RequestStatus.choices,
+        default=RequestStatus.EDITING,
         verbose_name='状态'
     )
 

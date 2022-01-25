@@ -5,7 +5,7 @@ from django.utils.http import urlencode
 
 from common.admin import ProjectAdmin
 from common.models import IngredientCategory, Project
-from inventory.models import ApprovalStatus, InventoryInList, InventoryInListItem
+from inventory.models import InventoryInList, InventoryInListItem, RequestStatus
 
 
 def inventory_list_item_inline(model_class, category, extra_item=3, max_item=None):
@@ -73,9 +73,9 @@ class InventoryInListAdmin(admin.ModelAdmin):
             return readonly_fields
 
         # if obj.status in [
-        #     ApprovalStatus.APPROVED,
-        #     ApprovalStatus.REJECTED,
-        #     ApprovalStatus.REEDITING
+        #     RequestStatus.APPROVED,
+        #     RequestStatus.REJECTED,
+        #     RequestStatus.REEDITING
         # ]:
         #     readonly_fields.append('comments')
 
@@ -99,9 +99,9 @@ class InventoryInListAdmin(admin.ModelAdmin):
         # both status and the edit_comments permission
         if not obj:
             exclude.append('comments')
-        elif obj.status == ApprovalStatus.EDITING:
+        elif obj.status == RequestStatus.EDITING:
             exclude.append('comments')
-        elif obj.status in [ApprovalStatus.SUBMITTED, ApprovalStatus.RESUBMITTED]:
+        elif obj.status in [RequestStatus.SUBMITTED, RequestStatus.RESUBMITTED]:
             if not self.can_edit_comments(request):
                 exclude.append('comments')
 
@@ -114,16 +114,16 @@ class InventoryInListAdmin(admin.ModelAdmin):
 
         # When inventory managers can edit
         if obj.status in [
-            ApprovalStatus.EDITING,
-            ApprovalStatus.REEDITING,
-            ApprovalStatus.REJECTED
+            RequestStatus.EDITING,
+            RequestStatus.REEDITING,
+            RequestStatus.REJECTED
         ] and has_change_permission and self.can_edit_project_date_and_items(request):
             return True
 
         # When project managers can edit
         if obj.status in [
-            ApprovalStatus.SUBMITTED,
-            ApprovalStatus.RESUBMITTED
+            RequestStatus.SUBMITTED,
+            RequestStatus.RESUBMITTED
         ] and has_change_permission and self.can_edit_comments(request):
             return True
 
