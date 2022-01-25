@@ -1,18 +1,23 @@
 from collections import defaultdict
 from copy import copy
 from datetime import date
+from urllib.parse import quote as urlquote
 
+from django.contrib.admin.utils import quote
 from django.contrib import admin, messages
+from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.contrib.admin.widgets import AutocompleteSelect
 from django.forms import formset_factory, DateField, Form, ModelForm
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.http import urlencode
 
 import openpyxl
 
 from common.admin import ProjectAdmin
-from common.models import IngredientCategory, Project
+from common.models import IngredientCategory, Project, RequestStatus
 from common.views import rfc5987_content_disposition
 from purchasing.models import (
     ProjectPurchaseOrder,
@@ -62,11 +67,13 @@ def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
 @admin.register(ProjectPurchaseOrder)
 class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
     admin_priority = 1
+    exclude = ['status']
     inlines = [
         purchase_order_inline(ProjectPurchaseOrderItem, category, 2)
         for category in IngredientCategory
     ]
     autocomplete_fields = ['project']
+    list_display = ['project', 'date', 'emoji_and_status']
     actions = ['duplicate_project_purchase_order', 'download_project_purchase_order']
 
     class Media:
@@ -104,24 +111,86 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
             self.delete_model(request, obj)
 
     def has_view_permission(self, request, obj=None):
-        opts = self.opts
-        codename = '%s_%s' % ('view', opts.model_name)
-        return request.user.has_perm('%s.%s' % (opts.app_label, codename))
+        """
+        Whether a user can view a project purchase order depends on
+        whether the user can view the project.
+        """
+        project = getattr(obj, 'project', None)
+        return request.user.has_perm('common.view_project', project)
+
+    def has_change_permission(self, request, obj=None):
+        """
+        A regular user can no longer change an order
+        after it has been submitted.
+        """
+        has_change_permission = super().has_change_permission(request, obj)
+        if request.user.is_superuser or not obj:
+            return has_change_permission
+
+        return has_change_permission and obj.status == RequestStatus.EDITING
 
     def get_queryset(self, request):
-        """
-        If a user has global view permission for ProjectPurchaseOrder, they can see
-        all purchase orders of all projects.
-        If a user does not have global view permission for ProjectPurchaseOrder, they
-        can only see purchase orders of projects for which they have the view permission.
-        """
         qs = super().get_queryset(request)
 
-        if request.user.is_superuser or self.has_view_permission(request):
+        if request.user.is_superuser:
             return qs
 
         permitted_projects = ProjectAdmin(Project, self.admin_site).get_queryset(request)
         return qs.filter(project__in=permitted_projects)
+
+    def response_submit(self, request, obj, opts, preserved_filters, msg_dict):
+        obj.status = RequestStatus.SUBMITTED
+        obj.save()
+
+        msg = format_html('成功提交了 {name} “{obj}”。', **msg_dict)
+        self.message_user(request, msg, messages.SUCCESS)
+        if self.has_view_or_change_permission(request):
+            post_url = reverse('admin:%s_%s_changelist' %
+                               (opts.app_label, opts.model_name),
+                               current_app=self.admin_site.name)
+            post_url = add_preserved_filters(
+                {'preserved_filters': preserved_filters, 'opts': opts}, post_url)
+        else:
+            post_url = reverse('admin:index', current_app=self.admin_site.name)
+        return HttpResponseRedirect(post_url)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        opts = obj._meta
+        preserved_filters = self.get_preserved_filters(request)
+
+        # Add a link to the object's change form if the user can edit the obj.
+        if self.has_change_permission(request, obj):
+            obj_url = reverse(
+                'admin:%s_%s_change' % (opts.app_label, opts.model_name),
+                args=(quote(obj.pk),),
+                current_app=self.admin_site.name,
+            )
+            obj_repr = format_html('<a href="{}">{}</a>', urlquote(obj_url), obj)
+        else:
+            obj_repr = str(obj)
+        msg_dict = {
+            'name': opts.verbose_name,
+            'obj': obj_repr,
+        }
+
+        if "_submit" in request.POST:
+            return self.response_submit(request, obj, opts, preserved_filters, msg_dict)
+        else:
+            return super().response_change(request, obj)
+
+    def response_change(self, request, obj):
+        opts = self.model._meta
+        preserved_filters = self.get_preserved_filters(request)
+
+        msg_dict = {
+            'name': opts.verbose_name,
+            'obj': format_html('<a href="{}">{}</a>', urlquote(request.path), obj),
+        }
+
+        if "_submit" in request.POST:
+            return self.response_submit(request, obj, opts, preserved_filters, msg_dict)
+        else:
+            return super().response_change(request, obj)
 
     @admin.action(description='复制所选的项目采购清单')
     def duplicate_project_purchase_order(self, request, queryset):

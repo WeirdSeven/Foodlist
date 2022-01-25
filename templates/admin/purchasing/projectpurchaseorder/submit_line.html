@@ -1,0 +1,7 @@
+{% extends "admin/submit_line.html" %}
+{% load i18n admin_urls %}
+
+{% block submit-row %}
+{% if show_save %}<input type="submit" value="提交" class="default" name="_submit" />{% endif %}
+{{ block.super }}
+{% endblock %}
