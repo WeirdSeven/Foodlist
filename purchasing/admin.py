@@ -141,12 +141,13 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
     def send_sms_notification(self):
         pass
 
-    def response_submit(self, request, obj, opts, preserved_filters, msg_dict):
+    def submit_model(self, request, obj):
         obj.status = RequestStatus.SUBMITTED
         obj.save()
 
         self.send_sms_notification()
 
+    def response_submit(self, request, opts, preserved_filters, msg_dict):
         msg = format_html('成功提交了 {name} “{obj}”。', **msg_dict)
         self.message_user(request, msg, messages.SUCCESS)
         if self.has_view_or_change_permission(request):
@@ -160,6 +161,8 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         return HttpResponseRedirect(post_url)
 
     def response_add(self, request, obj, post_url_continue=None):
+        self.submit_model(request, obj)
+
         opts = obj._meta
         preserved_filters = self.get_preserved_filters(request)
 
@@ -179,11 +182,13 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         }
 
         if "_submit" in request.POST:
-            return self.response_submit(request, obj, opts, preserved_filters, msg_dict)
+            return self.response_submit(request, opts, preserved_filters, msg_dict)
         else:
             return super().response_change(request, obj)
 
     def response_change(self, request, obj):
+        self.submit_model(request, obj)
+
         opts = self.model._meta
         preserved_filters = self.get_preserved_filters(request)
 
@@ -193,7 +198,7 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         }
 
         if "_submit" in request.POST:
-            return self.response_submit(request, obj, opts, preserved_filters, msg_dict)
+            return self.response_submit(request, opts, preserved_filters, msg_dict)
         else:
             return super().response_change(request, obj)
 
