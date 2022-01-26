@@ -2,6 +2,10 @@
 {% load i18n admin_urls %}
 
 {% block submit-row %}
-{% if show_save %}<input type="submit" value="提交" class="default" name="_submit" />{% endif %}
+{% if show_save %}
+    <!-- TODO: Replace the confirm window with a prettier alternative -->
+    <input type="submit" value="提交" class="default" name="_submit"
+           onclick="return confirm('提交后不可再更改。确定提交吗？')" />
+{% endif %}
 {{ block.super }}
 {% endblock %}
