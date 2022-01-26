@@ -138,9 +138,14 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         permitted_projects = ProjectAdmin(Project, self.admin_site).get_queryset(request)
         return qs.filter(project__in=permitted_projects)
 
+    def send_sms_notification(self):
+        pass
+
     def response_submit(self, request, obj, opts, preserved_filters, msg_dict):
         obj.status = RequestStatus.SUBMITTED
         obj.save()
+
+        self.send_sms_notification()
 
         msg = format_html('成功提交了 {name} “{obj}”。', **msg_dict)
         self.message_user(request, msg, messages.SUCCESS)
