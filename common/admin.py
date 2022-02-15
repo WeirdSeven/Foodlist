@@ -27,7 +27,7 @@ class IngredientAdmin(admin.ModelAdmin):
     ordering = ['name']
     search_fields = ['name']
     inlines = [IngredientPriceInline]
-    list_display = ['name_and_spec', 'price_per_unit', 'category']
+    list_display = ['name_and_spec', 'latest_price_per_unit', 'category']
     list_filter = ['category']
 
     class Media:

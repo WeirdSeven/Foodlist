@@ -13,7 +13,7 @@ from common.models import IngredientCategory
 from purchasing.models import ProjectPurchaseOrder, ProjectPurchaseOrderItem
 
 
-def generate_summary(wb, items):
+def generate_summary(wb, date, items):
     sheet_name = '汇总'
     sheet = wb.create_sheet(sheet_name)
 
@@ -68,8 +68,10 @@ def generate_summary(wb, items):
             for ingredient, quantity in ingredient_quantities.items():
                 sheet.cell(row=item_row, column=column_name).value = ingredient.name_and_spec
                 sheet.cell(row=item_row, column=column_quantity).value = quantity
-                sheet.cell(row=item_row, column=column_unit_cost).value = ingredient.price_per_unit
-                total_cost = ingredient.price * quantity
+                price_per_unit = ingredient.effective_price_per_unit(date) or '未知'
+                sheet.cell(row=item_row, column=column_unit_cost).value = price_per_unit
+                unit_cost = ingredient.effective_price(date) or 0
+                total_cost = unit_cost * quantity
                 sheet.cell(row=item_row, column=column_total_cost).value = total_cost
                 item_row += 1
 
@@ -139,12 +141,12 @@ def generate_project_purchase_order(wb, order, items):
             for item in items_by_category:
                 sheet.cell(row=item_row, column=column_name).value = item.ingredient.name_and_spec
                 sheet.cell(row=item_row, column=column_quantity).value = item.quantity
-                sheet.cell(
-                    row=item_row,
-                    column=column_unit_cost
-                ).value = item.ingredient.price_per_unit
-                total_cost = item.ingredient.price * item.quantity
+                price_per_unit = item.ingredient.effective_price_per_unit(order.date) or '未知'
+                sheet.cell(row=item_row, column=column_unit_cost).value = price_per_unit
+                unit_cost = item.ingredient.effective_price(order.date) or 0
+                total_cost = unit_cost * item.quantity
                 sheet.cell(row=item_row, column=column_total_cost).value = total_cost
+
                 item_row += 1
 
             range_border_internal(sheet.iter_rows(
@@ -182,6 +184,6 @@ def download_purchase_order_summary(date):
     del wb['Sheet']
 
     items = ProjectPurchaseOrderItem.objects.filter(order__date=date)
-    generate_summary(wb, items)
+    generate_summary(wb, date, items)
     generate_project_purchase_orders(wb, date, items)
     return wb

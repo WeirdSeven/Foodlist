@@ -62,22 +62,36 @@ class Ingredient(models.Model):
     @property
     def latest_price(self):
         prices = self.prices.order_by('-effective_date')
-        return prices[0].price if prices else None
+        if prices:
+            return prices[0].price
 
-    @property
-    @admin.display(description='单价')
-    def price_per_unit(self):
+    def effective_price(self, request_date):
+        prices = self.prices.order_by('-effective_date')
+        for price in prices:
+            if request_date > price.effective_date:
+                return price.price
+
+    def price_per_unit(self, price):
 
         def format_without_zero(f):
-            if f and f.is_integer():
+            if f.is_integer():
                 return int(f)
             else:
                 return f
 
-        return f'{format_without_zero(self.latest_price)}元/{IngredientUnit(self.unit).label}'
+        if price:
+            return f'{format_without_zero(price)}元/{IngredientUnit(self.unit).label}'
+
+    @property
+    @admin.display(description='单价')
+    def latest_price_per_unit(self):
+        return self.price_per_unit(self.latest_price)
+
+    def effective_price_per_unit(self, request_date):
+        return self.price_per_unit(self.effective_price(request_date))
 
     def __str__(self):
-        return f'{self.name_and_spec}{self.price_per_unit}'
+        return f'{self.name_and_spec}{self.latest_price_per_unit}'
 
 
 class IngredientPrice(models.Model):
