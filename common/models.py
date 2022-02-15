@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib import admin
 from django.db import models
 
@@ -34,7 +36,6 @@ class Ingredient(models.Model):
     )
     specification = models.CharField(max_length=200, blank=True, verbose_name='规格')
     ratio = models.FloatField(default=1, verbose_name='转化率')
-    price = models.FloatField(verbose_name='单价')
     unit = models.CharField(
         max_length=2,
         choices=IngredientUnit.choices,
@@ -59,19 +60,42 @@ class Ingredient(models.Model):
         return f'{self.name}{specification_paretheses()}'
 
     @property
+    def latest_price(self):
+        prices = self.prices.order_by('-effective_date')
+        return prices[0].price if prices else None
+
+    @property
     @admin.display(description='单价')
     def price_per_unit(self):
 
         def format_without_zero(f):
-            if f.is_integer():
+            if f and f.is_integer():
                 return int(f)
             else:
                 return f
 
-        return f'{format_without_zero(self.price)}元/{IngredientUnit(self.unit).label}'
+        return f'{format_without_zero(self.latest_price)}元/{IngredientUnit(self.unit).label}'
 
     def __str__(self):
         return f'{self.name_and_spec}{self.price_per_unit}'
+
+
+class IngredientPrice(models.Model):
+    ingredient = models.ForeignKey(
+        Ingredient,
+        models.CASCADE,
+        verbose_name='原材料',
+        related_name='prices'
+    )
+    price = models.FloatField(verbose_name='单价')
+    effective_date = models.DateField(default=date.today, verbose_name='生效日期')
+
+    class Meta:
+        verbose_name = '原材料价格'
+        verbose_name_plural = '原材料价格'
+
+    def __str__(self):
+        return f'{self.ingredient} {self.price} {self.effective_date}'
 
 
 # Project

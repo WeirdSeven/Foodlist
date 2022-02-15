@@ -6,6 +6,7 @@ from guardian.shortcuts import get_objects_for_user
 
 from common.models import (
     Ingredient,
+    IngredientPrice,
     Project,
     SDish,
     SDish2Standard,
@@ -13,14 +14,24 @@ from common.models import (
 )
 
 
+class IngredientPriceInline(admin.TabularInline):
+    model = IngredientPrice
+    extra = 1
+
+
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
+
     admin_priority = 1
     exclude = ('ratio',)
     ordering = ['name']
     search_fields = ['name']
+    inlines = [IngredientPriceInline]
     list_display = ['name_and_spec', 'price_per_unit', 'category']
     list_filter = ['category']
+
+    class Media:
+        css = {"all": ("css/hide_admin_original.css",)}
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -32,22 +43,22 @@ class IngredientAdmin(admin.ModelAdmin):
         return qs
 
 
-def sdish_inline():
-    class SDish2StandardIngredientInline(nested_admin.NestedTabularInline):
-        model = SDish2StandardIngredient
-        autocomplete_fields = ['ingredient']
-        extra = 1
-
-    class SDish2StandardInline(nested_admin.NestedStackedInline):
-        model = SDish2Standard
-        inlines = [SDish2StandardIngredientInline]
-        extra = 1
-
-    return SDish2StandardInline
-
-
 @admin.register(SDish)
 class SDishAdmin(nested_admin.NestedModelAdmin):
+
+    def sdish_inline():
+        class SDish2StandardIngredientInline(nested_admin.NestedTabularInline):
+            model = SDish2StandardIngredient
+            autocomplete_fields = ['ingredient']
+            extra = 1
+
+        class SDish2StandardInline(nested_admin.NestedStackedInline):
+            model = SDish2Standard
+            inlines = [SDish2StandardIngredientInline]
+            extra = 1
+
+        return SDish2StandardInline
+
     admin_priority = 3
     inlines = [sdish_inline()]
 
