@@ -83,7 +83,7 @@ class ProjectAdmin(guardian_admin.GuardedModelAdmin):
         Note that here we check both the global view permission and object-level view permission.
         We add the object-level permission check to make the autocomplete feature work, since
         AutocompleteJsonView requires has_view_permission to return true so that it does not throw
-        a PermissionDnied exception.
+        a PermissionDenied exception.
         """
         return (
             request.user.is_active and (
