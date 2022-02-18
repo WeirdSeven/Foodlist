@@ -161,8 +161,6 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         return HttpResponseRedirect(post_url)
 
     def response_add(self, request, obj, post_url_continue=None):
-        self.submit_model(request, obj)
-
         opts = obj._meta
         preserved_filters = self.get_preserved_filters(request)
 
@@ -182,13 +180,12 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         }
 
         if "_submit" in request.POST:
+            self.submit_model(request, obj)
             return self.response_submit(request, opts, preserved_filters, msg_dict)
         else:
             return super().response_change(request, obj)
 
     def response_change(self, request, obj):
-        self.submit_model(request, obj)
-
         opts = self.model._meta
         preserved_filters = self.get_preserved_filters(request)
 
@@ -198,6 +195,7 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         }
 
         if "_submit" in request.POST:
+            self.submit_model(request, obj)
             return self.response_submit(request, opts, preserved_filters, msg_dict)
         else:
             return super().response_change(request, obj)
