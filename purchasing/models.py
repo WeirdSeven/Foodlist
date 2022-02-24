@@ -6,6 +6,23 @@ from django.db import models
 from common.models import Ingredient, Project, RequestStatus
 
 
+class ProjectSettings(models.Model):
+    project = models.OneToOneField(
+        Project,
+        models.CASCADE,
+        verbose_name='项目',
+        related_name='purchasing_settings'
+    )
+    daily_purchasing_budget = models.FloatField(verbose_name='每日采购成本上限')
+
+    class Meta:
+        verbose_name = '项目采购设置'
+        verbose_name_plural = '项目采购设置'
+
+    def __str__(self):
+        return f'{self.project}采购设置'
+
+
 emoji_for_request_status = {
     RequestStatus.EDITING: '🕒',
     RequestStatus.SUBMITTED: '🟢'

@@ -3,16 +3,20 @@ from copy import copy
 from datetime import date
 from urllib.parse import quote as urlquote
 
-from django.contrib.admin.utils import quote
 from django.contrib import admin, messages
+from django.contrib.admin.exceptions import DisallowedModelAdminToField
+from django.contrib.admin.options import IS_POPUP_VAR, TO_FIELD_VAR
 from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
-from django.contrib.admin.widgets import AutocompleteSelect
+from django.contrib.admin.utils import quote, unquote, flatten_fieldsets
+from django.contrib.admin import helpers, widgets
+from django.core.exceptions import PermissionDenied
 from django.forms import formset_factory, DateField, Form, ModelForm
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.http import urlencode
+from django.utils.translation import gettext as _
 
 import openpyxl
 
@@ -20,6 +24,7 @@ from common.admin import ProjectAdmin
 from common.models import IngredientCategory, Project, RequestStatus
 from common.views import rfc5987_content_disposition
 from purchasing.models import (
+    ProjectSettings,
     ProjectPurchaseOrder,
     ProjectPurchaseOrderItem,
     PurchaseOrderSummary,
@@ -28,8 +33,23 @@ from purchasing.models import (
 from purchasing.views import download_project_purchase_order, download_purchase_order_summary
 
 
+@admin.register(ProjectSettings)
+class ProjectSettingsAdmin(admin.ModelAdmin):
+    admin_priority = 0
+    autocomplete_fields = ['project']
+
+    def get_exclude(self, request, obj=None):
+        exclude = list(super().get_exclude(request, obj) or [])
+
+        if request.user.is_superuser:
+            return exclude
+
+        exclude.append('project')
+        return exclude
+
+
 def purchase_order_inline(model_class, category, extra_item=3, max_item=None):
-    class AutoCompleteSelectWithCategory(AutocompleteSelect):
+    class AutoCompleteSelectWithCategory(widgets.AutocompleteSelect):
         def get_url(self):
             url = super().get_url()
             url += '?' + urlencode({
@@ -215,6 +235,161 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
             return self.response_submit(request, opts, preserved_filters, msg_dict)
         else:
             return super().response_change(request, obj)
+
+    @staticmethod
+    def all_valid(parent_form, formsets):
+        if not all([formset.is_valid() for formset in formsets]):
+            return False
+
+        def get_order(formsets):
+            for formset in formsets:
+                for form in formset.forms:
+                    data = form.cleaned_data
+                    if data and not data['DELETE']:
+                        return data['order']
+
+        order = get_order(formsets)
+        # No order will be found only if there are no valid inline items.
+        if not order:
+            return True
+
+        total_cost = 0
+        for formset in formsets:
+            for form in formset.forms:
+                data = form.cleaned_data
+                # The inline has been emptied or to be deleted
+                if not data or data['DELETE']:
+                    continue
+
+                total_cost += data['ingredient'].effective_price(order.date) * data['quantity']
+
+        budget = order.project.purchasing_settings.daily_purchasing_budget
+        overbudget = total_cost - budget
+        if overbudget <= 0:
+            return True
+        else:
+            error_msg = f'成本{total_cost}元。预算{budget}元。超支{overbudget}元。'
+            parent_form.add_error(None, error_msg)
+            return False
+
+    def _changeform_view(self, request, object_id, form_url, extra_context):
+        """
+        I know overriding such a long method is terrible! But I do not know what a better
+        approach would be. I will take a look at this patch method to try to patch all_valid().
+        https://docs.python.org/3/library/unittest.mock.html#unittest.mock.patch
+        """
+        to_field = request.POST.get(TO_FIELD_VAR, request.GET.get(TO_FIELD_VAR))
+        if to_field and not self.to_field_allowed(request, to_field):
+            raise DisallowedModelAdminToField("The field %s cannot be referenced." % to_field)
+
+        model = self.model
+        opts = model._meta
+
+        if request.method == 'POST' and '_saveasnew' in request.POST:
+            object_id = None
+
+        add = object_id is None
+
+        if add:
+            if not self.has_add_permission(request):
+                raise PermissionDenied
+            obj = None
+
+        else:
+            obj = self.get_object(request, unquote(object_id), to_field)
+
+            if request.method == 'POST':
+                if not self.has_change_permission(request, obj):
+                    raise PermissionDenied
+            else:
+                if not self.has_view_or_change_permission(request, obj):
+                    raise PermissionDenied
+
+            if obj is None:
+                return self._get_obj_does_not_exist_redirect(request, opts, object_id)
+
+        fieldsets = self.get_fieldsets(request, obj)
+        ModelForm = self.get_form(
+            request, obj, change=not add, fields=flatten_fieldsets(fieldsets)
+        )
+        if request.method == 'POST':
+            form = ModelForm(request.POST, request.FILES, instance=obj)
+            form_validated = form.is_valid()
+            if form_validated:
+                new_object = self.save_form(request, form, change=not add)
+            else:
+                new_object = form.instance
+            formsets, inline_instances = self._create_formsets(request, new_object, change=not add)
+            if self.all_valid(form, formsets) and form_validated:
+                self.save_model(request, new_object, form, not add)
+                self.save_related(request, form, formsets, not add)
+                change_message = self.construct_change_message(request, form, formsets, add)
+                if add:
+                    self.log_addition(request, new_object, change_message)
+                    return self.response_add(request, new_object)
+                else:
+                    self.log_change(request, new_object, change_message)
+                    return self.response_change(request, new_object)
+            else:
+                form_validated = False
+        else:
+            if add:
+                initial = self.get_changeform_initial_data(request)
+                form = ModelForm(initial=initial)
+                formsets, inline_instances = self._create_formsets(request, form.instance, change=False)
+            else:
+                form = ModelForm(instance=obj)
+                formsets, inline_instances = self._create_formsets(request, obj, change=True)
+
+        if not add and not self.has_change_permission(request, obj):
+            readonly_fields = flatten_fieldsets(fieldsets)
+        else:
+            readonly_fields = self.get_readonly_fields(request, obj)
+        adminForm = helpers.AdminForm(
+            form,
+            list(fieldsets),
+            # Clear prepopulated fields on a view-only form to avoid a crash.
+            self.get_prepopulated_fields(request, obj) if add or self.has_change_permission(request, obj) else {},
+            readonly_fields,
+            model_admin=self)
+        media = self.media + adminForm.media
+
+        inline_formsets = self.get_inline_formsets(request, formsets, inline_instances, obj)
+        for inline_formset in inline_formsets:
+            media = media + inline_formset.media
+
+        if add:
+            title = _('Add %s')
+        elif self.has_change_permission(request, obj):
+            title = _('Change %s')
+        else:
+            title = _('View %s')
+        context = {
+            **self.admin_site.each_context(request),
+            'title': title % opts.verbose_name,
+            'subtitle': str(obj) if obj else None,
+            'adminform': adminForm,
+            'object_id': object_id,
+            'original': obj,
+            'is_popup': IS_POPUP_VAR in request.POST or IS_POPUP_VAR in request.GET,
+            'to_field': to_field,
+            'media': media,
+            'inline_admin_formsets': inline_formsets,
+            'errors': helpers.AdminErrorList(form, formsets),
+            'preserved_filters': self.get_preserved_filters(request),
+        }
+
+        # Hide the "Save" and "Save and continue" buttons if "Save as New" was
+        # previously chosen to prevent the interface from getting confusing.
+        if request.method == 'POST' and not form_validated and "_saveasnew" in request.POST:
+            context['show_save'] = False
+            context['show_save_and_continue'] = False
+            # Use the change template instead of the add template.
+            add = False
+
+        context.update(extra_context or {})
+
+        return self.render_change_form(request, context, add=add, change=not add, obj=obj, form_url=form_url)
 
     @admin.action(description='复制所选的项目采购清单')
     def duplicate_project_purchase_order(self, request, queryset):
