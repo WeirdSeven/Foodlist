@@ -9,6 +9,7 @@ from django.db import models
 class IngredientCategory(models.TextChoices):
     VEGETABLE = 'VG', '蔬果'
     MEAT = 'MT', '肉类'
+    SIDE = 'SD', '副食'
     TOFU = 'TF', '豆制品'
     CONDIMENT = 'CND', '调料'
     DRY = 'DRY', '干货'
@@ -24,6 +25,8 @@ class IngredientUnit(models.TextChoices):
     BOX = 'BX', '箱'
     SACK = 'SK', '袋'
     BAG = 'BG', '包'
+    SINGLE = 'SN', '个'
+    PAIR = 'PR', '副'
 
 
 class Ingredient(models.Model):
