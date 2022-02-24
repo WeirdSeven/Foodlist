@@ -110,13 +110,29 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
         for obj in queryset:
             self.delete_model(request, obj)
 
-    def has_view_permission(self, request, obj=None):
+    def has_global_view_permission(self, request):
+        """
+        Checks to see whether the user is granted the global
+        view_projectpurchaseorder permission.
+        """
+        opts = self.opts
+        codename_view = '%s_%s' % ('view', opts.model_name)
+        return request.user.has_perm('%s.%s' % (opts.app_label, codename_view))
+
+    def has_object_view_permission(self, request, obj):
         """
         Whether a user can view a project purchase order depends on
         whether the user can view the project.
         """
         project = getattr(obj, 'project', None)
         return request.user.has_perm('common.view_project', project)
+
+    def has_view_permission(self, request, obj=None):
+        """
+        This method combines the global and object-level view permissions.
+        """
+        return (self.has_global_view_permission(request) or
+                self.has_object_view_permission(request, obj))
 
     def has_change_permission(self, request, obj=None):
         """
@@ -132,7 +148,7 @@ class ProjectPurchaseOrderAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
 
-        if request.user.is_superuser:
+        if request.user.is_superuser or self.has_global_view_permission(request):
             return qs
 
         permitted_projects = ProjectAdmin(Project, self.admin_site).get_queryset(request)
