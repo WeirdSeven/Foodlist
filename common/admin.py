@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.core.exceptions import ValidationError
+from django.forms.models import BaseInlineFormSet
 
 import nested_admin
 import guardian.admin as guardian_admin
@@ -14,14 +16,26 @@ from common.models import (
 )
 
 
+class IngredientPriceInlineFormset(BaseInlineFormSet):
+
+    def clean(self):
+        """Check that at least one price has been entered."""
+        super().clean()
+        if any(self.errors):
+            return
+        if not any(cleaned_data and not cleaned_data.get('DELETE', False)
+                   for cleaned_data in self.cleaned_data):
+            raise ValidationError('至少需要提供一个价格。')
+
+
 class IngredientPriceInline(admin.TabularInline):
     model = IngredientPrice
+    formset = IngredientPriceInlineFormset
     extra = 1
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-
     admin_priority = 1
     exclude = ('ratio',)
     ordering = ['name']
